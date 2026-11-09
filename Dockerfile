@@ -2,7 +2,7 @@
 
 # The SPA is platform-independent and Go cross-compiles, so both build stages
 # run on the build host; only the final stage is per target platform.
-FROM --platform=$BUILDPLATFORM node:24-alpine AS web
+FROM --platform=$BUILDPLATFORM node:26-alpine AS web
 WORKDIR /src/web
 RUN npm install -g pnpm@12.16.1
 COPY web/package.json web/pnpm-lock.yaml ./
