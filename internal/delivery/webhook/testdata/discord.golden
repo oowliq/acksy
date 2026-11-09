@@ -1,0 +1,18 @@
+{
+  "username": "Acksy",
+  "embeds": [
+    {
+      "title": "Deploy \u003cprod\u003e failed",
+      "description": "**api** is down @everyone \u003c!channel\u003e\n\n\u003cscript\u003ealert(1)\u003c/script\u003e ![px](https://evil.example/p.png)",
+      "url": "https://ci.example/run/42",
+      "color": 15961000,
+      "timestamp": "2026-11-09T11:59:00Z",
+      "footer": {
+        "text": "ci · P5 · ×2"
+      }
+    }
+  ],
+  "allowed_mentions": {
+    "parse": []
+  }
+}

@@ -1,0 +1,4 @@
+POST /ntfy/mytopic
+X-Sequence-ID: my-download-123
+
+Download complete

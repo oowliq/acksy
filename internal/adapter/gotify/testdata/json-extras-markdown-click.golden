@@ -1,0 +1,34 @@
+{
+  "op": "publish",
+  "token": "ack_querytoken",
+  "message": {
+    "Topic": "",
+    "Title": "Deploy",
+    "Body": "**prod** updated",
+    "Priority": 4,
+    "Tags": null,
+    "ClickURL": "https://ci.example.com/run/42",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "",
+    "ExpiresAt": null,
+    "Source": "gotify",
+    "TopicFromToken": true
+  },
+  "echo": {
+    "title": "Deploy",
+    "message": "**prod** updated",
+    "priority": 8,
+    "extras": {
+      "client::display": {
+        "contentType": "text/markdown"
+      },
+      "client::notification": {
+        "bigImageUrl": "https://example.com/x.png",
+        "click": {
+          "url": "https://ci.example.com/run/42"
+        }
+      }
+    }
+  }
+}

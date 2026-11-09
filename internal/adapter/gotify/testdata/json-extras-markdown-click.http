@@ -1,0 +1,4 @@
+POST /gotify/message?token=ack_querytoken
+Content-Type: application/json
+
+{"title":"Deploy","message":"**prod** updated","priority":8,"extras":{"client::display":{"contentType":"text/markdown"},"client::notification":{"click":{"url":"https://ci.example.com/run/42"},"bigImageUrl":"https://example.com/x.png"}}}

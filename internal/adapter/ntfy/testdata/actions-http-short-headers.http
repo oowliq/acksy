@@ -1,0 +1,4 @@
+POST /ntfy/garage
+Actions: http, Open garage, https://ha.lan/api/services/cover/open_cover, method=POST, headers.Authorization=Bearer LLT, headers.Content-Type=application/json, body='{"entity_id":"cover.garage"}', clear=true
+
+Someone is at the gate

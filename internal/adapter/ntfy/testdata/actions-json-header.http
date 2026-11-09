@@ -1,0 +1,4 @@
+POST /ntfy/myhome
+Actions: [{"action": "view", "label": "Open portal", "url": "https://home.nest.com/", "clear": true}, {"action": "http", "label": "Turn down", "url": "https://api.nest.com/", "body": "{\"temperature\": 65}"}]
+
+You left the house. Turn down the A/C?

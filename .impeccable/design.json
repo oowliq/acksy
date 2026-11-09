@@ -1,0 +1,805 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-09T09:55:22+00:00",
+  "title": "Design System: Acksy",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Mocha Base",
+        "canonical": "oklch(24.3% 0.030 283.9)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "bg-side": {
+        "role": "neutral",
+        "displayName": "Mocha Mantle",
+        "canonical": "oklch(21.6% 0.025 284.1)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "bg-sunken": {
+        "role": "neutral",
+        "displayName": "Mocha Crust",
+        "canonical": "oklch(18.3% 0.020 284.2)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "bg-selected": {
+        "role": "neutral",
+        "displayName": "Surface0 Fill",
+        "canonical": "oklch(32.4% 0.032 282.0)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Surface0 Hairline",
+        "canonical": "oklch(32.4% 0.032 282.0)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Surface1 Edge",
+        "canonical": "oklch(40.4% 0.032 280.2)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "fg": {
+        "role": "neutral",
+        "displayName": "Mocha Text",
+        "canonical": "oklch(87.9% 0.043 272.3)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "fg-2": {
+        "role": "neutral",
+        "displayName": "Subtext1",
+        "canonical": "oklch(81.7% 0.040 272.9)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "fg-muted": {
+        "role": "neutral",
+        "displayName": "Subtext0",
+        "canonical": "oklch(75.1% 0.040 273.9)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "fg-faint": {
+        "role": "neutral",
+        "displayName": "Overlay2",
+        "canonical": "oklch(68.7% 0.037 274.7)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Mocha Lavender",
+        "canonical": "oklch(81.7% 0.091 277.3)",
+        "tonalRamp": [
+          "#0a0b10",
+          "#212336",
+          "#3c405b",
+          "#595e83",
+          "#787fac",
+          "#98a1d8",
+          "#bac4ff",
+          "#e7edff"
+        ]
+      },
+      "accent-fg": {
+        "role": "primary",
+        "displayName": "Crust on Lavender",
+        "canonical": "oklch(18.3% 0.020 284.2)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#24242e",
+          "#41414a",
+          "#606069",
+          "#818289",
+          "#a4a4aa",
+          "#c8c9cd",
+          "#eeeeef"
+        ]
+      },
+      "prio-high": {
+        "role": "secondary",
+        "displayName": "Priority Red",
+        "canonical": "oklch(75.6% 0.130 2.8)",
+        "tonalRamp": [
+          "#13070a",
+          "#3c1722",
+          "#622f3e",
+          "#8c495c",
+          "#b7657c",
+          "#e5829e",
+          "#ffa8c2",
+          "#ffe1eb"
+        ]
+      },
+      "prio-mid": {
+        "role": "secondary",
+        "displayName": "Priority Peach",
+        "canonical": "oklch(82.4% 0.101 52.6)",
+        "tonalRamp": [
+          "#100a06",
+          "#342013",
+          "#583a27",
+          "#7f573e",
+          "#a77556",
+          "#d2956f",
+          "#fdb78c",
+          "#ffe7d4"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Live Green",
+        "canonical": "oklch(85.8% 0.109 142.7)",
+        "tonalRamp": [
+          "#080c08",
+          "#1a2a19",
+          "#324930",
+          "#4b6b48",
+          "#668f63",
+          "#83b47f",
+          "#a0db9b",
+          "#dcf8da"
+        ]
+      },
+      "code": {
+        "role": "tertiary",
+        "displayName": "Code Pink",
+        "canonical": "oklch(87.0% 0.075 336.3)",
+        "tonalRamp": [
+          "#0d0a0c",
+          "#2d202a",
+          "#4e3b49",
+          "#72586b",
+          "#98768e",
+          "#bf96b4",
+          "#e8b8db",
+          "#fee6f7"
+        ]
+      },
+      "topic-mauve": {
+        "role": "tertiary",
+        "displayName": "Topic Mauve",
+        "canonical": "oklch(78.7% 0.119 304.8)",
+        "tonalRamp": [
+          "#0d0911",
+          "#2b1e39",
+          "#4a395e",
+          "#6c5586",
+          "#8f73b0",
+          "#b593dd",
+          "#dab7ff",
+          "#f6e7ff"
+        ]
+      },
+      "topic-sky": {
+        "role": "tertiary",
+        "displayName": "Topic Sky",
+        "canonical": "oklch(84.7% 0.083 210.3)",
+        "tonalRamp": [
+          "#070c0d",
+          "#12292d",
+          "#26484e",
+          "#3d6971",
+          "#548d97",
+          "#6db2be",
+          "#86d8e7",
+          "#d3f6fc"
+        ]
+      },
+      "topic-teal": {
+        "role": "tertiary",
+        "displayName": "Topic Teal",
+        "canonical": "oklch(85.8% 0.079 182.7)",
+        "tonalRamp": [
+          "#070c0b",
+          "#152926",
+          "#2a4944",
+          "#416a64",
+          "#5a8e85",
+          "#74b3a9",
+          "#8fdace",
+          "#d5f7f0"
+        ]
+      },
+      "topic-yellow": {
+        "role": "tertiary",
+        "displayName": "Topic Yellow",
+        "canonical": "oklch(91.9% 0.070 86.5)",
+        "tonalRamp": [
+          "#0c0b09",
+          "#29251a",
+          "#494131",
+          "#6b6049",
+          "#8f8163",
+          "#b4a37e",
+          "#dbc79a",
+          "#f9eed5"
+        ]
+      },
+      "topic-sapphire": {
+        "role": "tertiary",
+        "displayName": "Topic Sapphire",
+        "canonical": "oklch(79.1% 0.096 228.7)",
+        "tonalRamp": [
+          "#050c10",
+          "#0c2935",
+          "#204758",
+          "#36687f",
+          "#4d8ba7",
+          "#65b0d1",
+          "#87d5f9",
+          "#d4f4ff"
+        ]
+      },
+      "topic-blue": {
+        "role": "tertiary",
+        "displayName": "Topic Blue",
+        "canonical": "oklch(76.6% 0.111 259.9)",
+        "tonalRamp": [
+          "#070b13",
+          "#16253d",
+          "#2d4264",
+          "#47628d",
+          "#6183b9",
+          "#7ea6e7",
+          "#a2cbff",
+          "#ddf0ff"
+        ]
+      },
+      "latte-bg": {
+        "role": "neutral",
+        "displayName": "Latte Bg",
+        "canonical": "oklch(95.8% 0.006 264.5)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-bg-side": {
+        "role": "neutral",
+        "displayName": "Latte Bg Side",
+        "canonical": "oklch(93.3% 0.009 264.5)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-bg-sunken": {
+        "role": "neutral",
+        "displayName": "Latte Bg Sunken",
+        "canonical": "oklch(90.6% 0.012 264.5)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-bg-selected": {
+        "role": "neutral",
+        "displayName": "Latte Bg Selected",
+        "canonical": "oklch(85.7% 0.014 268.5)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-line-strong": {
+        "role": "neutral",
+        "displayName": "Latte Line Strong",
+        "canonical": "oklch(80.8% 0.017 271.2)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-fg": {
+        "role": "neutral",
+        "displayName": "Latte Fg",
+        "canonical": "oklch(43.5% 0.043 279.3)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-fg-2": {
+        "role": "neutral",
+        "displayName": "Latte Fg 2",
+        "canonical": "oklch(49.2% 0.038 279.3)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-fg-muted": {
+        "role": "neutral",
+        "displayName": "Latte Fg Muted",
+        "canonical": "oklch(54.7% 0.034 279.1)",
+        "tonalRamp": [
+          "#4c4f69",
+          "#5c5f77",
+          "#6c6f85",
+          "#acb0be",
+          "#ccd0da",
+          "#dce0e8",
+          "#e6e9ef",
+          "#eff1f5"
+        ]
+      },
+      "latte-accent": {
+        "role": "primary",
+        "displayName": "Latte Blue",
+        "canonical": "oklch(55.9% 0.226 262.1)",
+        "tonalRamp": [
+          "#010825",
+          "#00156d",
+          "#00349f",
+          "#1153d5",
+          "#3478ff",
+          "#62a0ff",
+          "#90c8ff",
+          "#d7f0ff"
+        ]
+      },
+      "latte-accent-fg": {
+        "role": "primary",
+        "displayName": "White on Latte Blue",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "latte-prio-high": {
+        "role": "secondary",
+        "displayName": "Latte Priority Red",
+        "canonical": "oklch(55.0% 0.216 19.8)",
+        "tonalRamp": [
+          "#1e0003",
+          "#580002",
+          "#870016",
+          "#b8002d",
+          "#e23b4d",
+          "#ff7077",
+          "#ff9fa1",
+          "#ffdfde"
+        ]
+      },
+      "latte-prio-mid": {
+        "role": "secondary",
+        "displayName": "Latte Priority Peach",
+        "canonical": "oklch(69.2% 0.204 42.4)",
+        "tonalRamp": [
+          "#190501",
+          "#4c0500",
+          "#781e00",
+          "#a73600",
+          "#d85000",
+          "#ff7129",
+          "#ff9f69",
+          "#ffdfc8"
+        ]
+      },
+      "latte-ok": {
+        "role": "tertiary",
+        "displayName": "Latte Live Green",
+        "canonical": "oklch(62.5% 0.177 140.4)",
+        "tonalRamp": [
+          "#020f01",
+          "#003000",
+          "#0b5100",
+          "#24740f",
+          "#3c9a27",
+          "#69bd59",
+          "#97df89",
+          "#dbf9d5"
+        ]
+      },
+      "latte-code": {
+        "role": "tertiary",
+        "displayName": "Latte Code Magenta",
+        "canonical": "oklch(54.7% 0.191 336.0)",
+        "tonalRamp": [
+          "#180214",
+          "#47003c",
+          "#700d60",
+          "#9b2987",
+          "#c150aa",
+          "#e07cca",
+          "#ffa8ea",
+          "#ffe2fc"
+        ]
+      },
+      "bg-hover": {
+        "role": "neutral",
+        "displayName": "Surface0 Wash",
+        "canonical": "color-mix(in oklab, #313244 55%, transparent)",
+        "tonalRamp": [
+          "#11111b",
+          "#181825",
+          "#1e1e2e",
+          "#313244",
+          "#45475a",
+          "#9399b2",
+          "#bac2de",
+          "#cdd6f4"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Lavender Wash",
+        "canonical": "color-mix(in oklab, #b4befe 16%, transparent)",
+        "tonalRamp": [
+          "#0a0b10",
+          "#212336",
+          "#3c405b",
+          "#595e83",
+          "#787fac",
+          "#98a1d8",
+          "#bac4ff",
+          "#e7edff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Reader title (max 60ch, balanced) and login heading."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog titles, empty-state headings, wordmark."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "App base size; every list row, nav item and tray header. Tabular figures."
+      },
+      "reading": {
+        "displayName": "Reading",
+        "purpose": "Markdown notification bodies, max 72ch, subtext1."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, segments, menu items, form labels, reader meta."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Menu labels, Topics heading, live status, tags."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Code blocks (13px), key caps (11px), inline code (0.86em)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "pop",
+        "value": "0 8px 24px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.4)",
+        "purpose": "Mocha: menus, dialogs, mobile drawer only."
+      },
+      {
+        "name": "pop-latte",
+        "value": "0 8px 24px -8px rgb(76 79 105 / 0.28), 0 2px 6px -2px rgb(76 79 105 / 0.18)",
+        "purpose": "Latte: the same floating surfaces."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-change",
+        "value": "150ms ease-out",
+        "purpose": "Background, colour and filter transitions on buttons, rows, nav items."
+      },
+      {
+        "name": "read-mark",
+        "value": "200ms ease-out",
+        "purpose": "Read dot fill, ring and 90% scale when toggling read state."
+      },
+      {
+        "name": "live-flash",
+        "value": "1.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "A changed row glows once in accent-soft and settles; removed under prefers-reduced-motion."
+      },
+      {
+        "name": "overlay",
+        "value": "tw-animate fade-in / zoom-in-95 / slide-in-from-left",
+        "purpose": "Dialog and drawer entrances."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "touch",
+        "value": "(hover: none)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single primary action per toolbar (Mark read, Sign in).",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Mark read<kbd class=\"ds-kbd ds-kbd-on-accent\">e</kbd></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--radius-control, 6px); font-size: 13px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out, filter 150ms ease-out; } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-btn-primary { background: var(--accent, #b4befe); color: var(--accent-fg, #11111b); font-weight: 600; border: 0; } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:active { filter: brightness(0.95); } .ds-kbd { display: inline-flex; min-width: 1.4em; justify-content: center; padding: 0 4px; border: 1px solid var(--line-strong, #45475a); border-radius: 4px; font: 11px/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--fg-muted, #a6adc8); } .ds-kbd-on-accent { border-color: color-mix(in oklab, var(--accent-fg, #11111b) 30%, transparent); color: color-mix(in oklab, var(--accent-fg, #11111b) 70%, transparent); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default outlined action (Archive, Snooze).",
+      "html": "<button class=\"ds-btn-secondary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"20\" height=\"5\" x=\"2\" y=\"3\" rx=\"1\"/><path d=\"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8\"/><path d=\"M10 12h4\"/></svg>Archive<kbd class=\"ds-kbd\">a</kbd></button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--radius-control, 6px); font-size: 13px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out, filter 150ms ease-out; } .ds-btn-secondary:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-btn-secondary { background: transparent; color: var(--fg, #cdd6f4); border: 1px solid var(--line-strong, #45475a); } .ds-btn-secondary:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); } .ds-btn-secondary:active { background: var(--bg-selected, #313244); } .ds-kbd { display: inline-flex; min-width: 1.4em; justify-content: center; padding: 0 4px; border: 1px solid var(--line-strong, #45475a); border-radius: 4px; font: 11px/1.5 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--fg-muted, #a6adc8); } "
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Toolbar actions and Delete at rest.",
+      "html": "<button class=\"ds-btn-ghost\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/></svg>Delete</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--radius-control, 6px); font-size: 13px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out, filter 150ms ease-out; } .ds-btn-ghost:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-btn-ghost { background: transparent; color: var(--fg-2, #bac2de); border: 0; } .ds-btn-ghost:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); color: var(--fg, #cdd6f4); } .ds-btn-ghost:active { background: var(--bg-selected, #313244); }"
+    },
+    {
+      "name": "Confirm Button",
+      "kind": "button",
+      "refersTo": "button-confirm",
+      "description": "Neutral second press for a destructive step; never red.",
+      "html": "<button class=\"ds-btn-confirm\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/></svg>Press again to delete</button>",
+      "css": ".ds-btn-confirm { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--radius-control, 6px); font-size: 13px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; cursor: pointer; transition: background-color 150ms ease-out, color 150ms ease-out, filter 150ms ease-out; } .ds-btn-confirm:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-btn-confirm { background: var(--bg-selected, #313244); color: var(--fg, #cdd6f4); border: 1px solid var(--fg, #cdd6f4); font-weight: 600; } .ds-btn-confirm:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Crust well with an accent border on focus.",
+      "html": "<label class=\"ds-field\"><span>Username</span><input class=\"ds-input\" placeholder=\"you\"></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; width: 300px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; } .ds-field span { font-size: 13px; color: var(--fg-2, #bac2de); } .ds-input { height: 40px; padding: 0 12px; border-radius: var(--radius-control, 6px); border: 1px solid var(--line-strong, #45475a); background: var(--bg-sunken, #11111b); color: var(--fg, #cdd6f4); font-size: 14px; outline: none; transition: border-color 150ms; } .ds-input::placeholder { color: var(--fg-faint, #9399b2); } .ds-input:focus { border-color: var(--accent, #b4befe); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-option-active",
+      "description": "Unread / All switch on a crust track.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button class=\"ds-seg-opt\" aria-checked=\"true\">Unread</button><button class=\"ds-seg-opt\" aria-checked=\"false\">All</button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--bg-sunken, #11111b); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; } .ds-seg-opt { height: 28px; padding: 0 10px; border: 0; border-radius: var(--radius-control, 6px); background: transparent; color: var(--fg-muted, #a6adc8); font-size: 13px; cursor: pointer; transition: color 150ms; } .ds-seg-opt:hover { color: var(--fg, #cdd6f4); } .ds-seg-opt[aria-checked=true] { background: var(--bg-selected, #313244); color: var(--fg, #cdd6f4); } .ds-seg-opt:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Mantle sidebar views and topics with tabular counts.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item\" aria-current=\"page\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 12h-6l-2 3h-4l-2-3H2\"/><path d=\"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z\"/></svg>Inbox<span class=\"ds-count\">12</span></a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"20\" height=\"5\" x=\"2\" y=\"3\" rx=\"1\"/><path d=\"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8\"/><path d=\"M10 12h4\"/></svg>Archive</a><span class=\"ds-nav-h\">Topics</span><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-sw\" style=\"background: var(--ctp-teal, #94e2d5)\"></span>backups<span class=\"ds-count\">3</span></a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 212px; padding: 10px; background: var(--bg-side, #181825); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 14px; } .ds-nav-item { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: var(--radius-control, 6px); color: var(--fg-2, #bac2de); text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-nav-item:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); color: var(--fg, #cdd6f4); } .ds-nav-item[aria-current=page] { background: var(--bg-selected, #313244); color: var(--fg, #cdd6f4); } .ds-nav-item:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-count { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--fg-muted, #a6adc8); } .ds-nav-item[aria-current=page] .ds-count { color: var(--accent, #b4befe); } .ds-nav-h { margin: 16px 0 4px; padding: 0 10px; font-size: 12px; font-weight: 500; color: var(--fg-muted, #a6adc8); } .ds-sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }"
+    },
+    {
+      "name": "Notification Row",
+      "kind": "custom",
+      "refersTo": "notification-row",
+      "description": "One-size row with the fixed-cell read mark, priority mark and repeat count.",
+      "html": "<div class=\"ds-row\"><span></span><button class=\"ds-mark\" aria-label=\"Mark read\"><span class=\"ds-dot\"></span></button><span class=\"ds-txt\"><span class=\"ds-l1\"><b class=\"ds-title\">Backup failed on nas-01</b><span class=\"ds-p5\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m17 11-5-5-5 5\"/><path d=\"m17 18-5-5-5 5\"/></svg>P5</span><span class=\"ds-rep\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m2 9 3-3 3 3\"/><path d=\"M13 18H7a2 2 0 0 1-2-2V6\"/><path d=\"m22 15-3 3-3-3\"/><path d=\"M11 6h6a2 2 0 0 1 2 2v10\"/></svg>3</span></span><span class=\"ds-prev\">restic: repository locked by another process</span></span><span class=\"ds-meta\"><time>09:41</time><span class=\"ds-topic\"><span class=\"ds-sw2\"></span>backups</span></span></div><div class=\"ds-row\"><span></span><button class=\"ds-mark\" aria-label=\"Mark unread\"><span class=\"ds-dot ds-read\"></span></button><span class=\"ds-txt\"><span class=\"ds-l1\"><span class=\"ds-title-read\">Certificate renewed</span></span><span class=\"ds-prev\">example.home valid until March</span></span><span class=\"ds-meta\"><time>Yesterday</time></span></div>",
+      "css": ".ds-row { display: grid; grid-template-columns: 28px 14px 1fr auto; gap: 0 8px; align-items: start; width: 500px; padding: 10px 12px 10px 6px; border-bottom: 1px solid var(--line, #313244); background: var(--bg, #1e1e2e); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 14px; line-height: 1.45; font-variant-numeric: tabular-nums; transition: background-color 150ms; } .ds-row:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); } .ds-mark { display: grid; place-items: center; height: 20px; padding: 0; border: 0; border-radius: 999px; background: transparent; cursor: pointer; } .ds-mark:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent, #b4befe); transition: background-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms ease-out; } .ds-dot.ds-read { background: transparent; transform: scale(0.9); box-shadow: inset 0 0 0 1.5px var(--line-strong, #45475a); } .ds-txt { min-width: 0; display: flex; flex-direction: column; } .ds-l1 { display: flex; gap: 8px; align-items: baseline; min-width: 0; } .ds-title { font-weight: 600; color: var(--fg, #cdd6f4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-title-read { color: var(--fg-2, #bac2de); } .ds-p5 { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; color: var(--prio-high, #f38ba8); } .ds-rep { display: inline-flex; align-items: center; gap: 2px; color: var(--fg-muted, #a6adc8); } .ds-prev { color: var(--fg-muted, #a6adc8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-meta { display: flex; flex-direction: column; align-items: flex-end; color: var(--fg-muted, #a6adc8); } .ds-topic { display: flex; align-items: center; gap: 6px; } .ds-sw2 { width: 8px; height: 8px; border-radius: 2px; background: var(--ctp-teal, #94e2d5); }"
+    },
+    {
+      "name": "Tray",
+      "kind": "card",
+      "refersTo": "tray",
+      "description": "Inset compartment for a group_key group, with dashed partitions and a ×N count.",
+      "html": "<section class=\"ds-tray\"><header class=\"ds-tray-h\"><span class=\"ds-tray-k\">ci/main</span><span>· builds</span><span class=\"ds-xn\">×3</span><button class=\"ds-tray-btn\">Mark group read</button></header><div class=\"ds-tray-list\"><div class=\"ds-tray-row\"><span class=\"ds-tdot\"></span><b>Pipeline #482 failed</b><time>09:12</time></div><div class=\"ds-tray-row\"><span class=\"ds-tdot\"></span><b>Pipeline #481 failed</b><time>08:57</time></div><div class=\"ds-tray-row\"><span class=\"ds-tdot ds-tread\"></span><span class=\"ds-r\">Pipeline #480 passed</span><time>08:40</time></div></div></section>",
+      "css": ".ds-tray { width: 484px; margin: 8px; overflow: hidden; border: 1px solid var(--line, #313244); border-radius: var(--radius-tray, 10px); background: var(--bg-side, #181825); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 14px; font-variant-numeric: tabular-nums; } .ds-tray-h { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; color: var(--fg-muted, #a6adc8); } .ds-tray-k { font-weight: 500; color: var(--fg-2, #bac2de); } .ds-xn { padding: 0 6px; border-radius: 5px; background: var(--bg-selected, #313244); color: var(--fg-2, #bac2de); } .ds-tray-btn { margin-left: auto; height: 28px; padding: 0 10px; border: 0; border-radius: var(--radius-control, 6px); background: transparent; color: var(--fg-2, #bac2de); font: inherit; font-size: 13px; cursor: pointer; } .ds-tray-btn:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); color: var(--fg, #cdd6f4); } .ds-tray-btn:focus-visible { outline: 2px solid var(--accent, #b4befe); outline-offset: 2px; } .ds-tray-list { border-top: 1px solid var(--line, #313244); } .ds-tray-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px dashed var(--line, #313244); color: var(--fg, #cdd6f4); } .ds-tray-row:last-child { border-bottom: 0; } .ds-tray-row:hover { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); } .ds-tray-row time { color: var(--fg-muted, #a6adc8); } .ds-r { color: var(--fg-2, #bac2de); } .ds-tdot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent, #b4befe); } .ds-tdot.ds-tread { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-strong, #45475a); transform: scale(0.9); }"
+    },
+    {
+      "name": "Menu",
+      "kind": "custom",
+      "refersTo": "menu",
+      "description": "Floating mantle menu with the Pop shadow (snooze, user menu).",
+      "html": "<div class=\"ds-menu\" role=\"menu\"><div class=\"ds-menu-l\">Snooze until…</div><div class=\"ds-menu-i\" tabindex=\"0\">Later today<span>18:00</span></div><div class=\"ds-menu-i\" tabindex=\"0\">Tomorrow<span>09:00</span></div><div class=\"ds-menu-sep\"></div><div class=\"ds-menu-i\" tabindex=\"0\">Unsnooze</div></div>",
+      "css": ".ds-menu { min-width: 240px; padding: 4px; border: 1px solid var(--line, #313244); border-radius: var(--radius-tray, 10px); background: var(--bg-side, #181825); box-shadow: var(--shadow, 0 8px 24px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.4)); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; } .ds-menu-l { padding: 6px 10px; font-size: 12px; color: var(--fg-muted, #a6adc8); } .ds-menu-i { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 10px; border-radius: var(--radius-control, 6px); font-size: 13px; color: var(--fg-2, #bac2de); outline: none; cursor: default; } .ds-menu-i span { color: var(--fg-muted, #a6adc8); font-variant-numeric: tabular-nums; } .ds-menu-i:hover, .ds-menu-i:focus-visible { background: var(--bg-hover, color-mix(in oklab, #313244 55%, transparent)); color: var(--fg, #cdd6f4); } .ds-menu-sep { height: 1px; margin: 4px 0; background: var(--line, #313244); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Bento Tray",
+    "overview": "Acksy is a notification inbox built to be cleared to zero, and its visual world is a quiet lacquered box with compartments. Catppuccin Mocha supplies the material: a mantle-dark sidebar, a base-dark list, crust-dark wells for code and inputs, all divided by single surface0 hairlines. Related alerts that share a group key do not repeat down the list; they settle into one inset compartment, the tray, with dashed partitions and a ×N count. Everything else is a compact, one-size row.\n\nDensity is mail-client tight, but colour is rationed. Lavender marks what is selected and the one action to take; red and peach speak only for priority 5 and 4; green says only \"live\" or \"done\". Rank inside a row comes from weight and ink, never size. Ink is never pure black or white, and the surfaces are flat until something floats above them. The world refuses both the grey, borderless mail clone and the neon terminal dashboard.\n\nMocha is the default on every device regardless of OS preference. Latte is an explicit opt-in light theme with the same structure; because Latte's lavender is too light to carry text, blue takes over the accent role there.",
+    "keyCharacteristics": [
+      "Catppuccin Mocha by default, Latte opt-in, both driven by the same semantic tokens.",
+      "Hairline structure (1px surface0) instead of cards or shadows.",
+      "One ink, one meaning: every hue has exactly one job.",
+      "One type size in list rows (14px); rank by weight and colour.",
+      "Read state is a mark in a fixed cell, and that mark is the toggle.",
+      "Trays group related alerts; dedup repeats are counted inline.",
+      "Tabular figures everywhere; times right-aligned."
+    ],
+    "rules": [
+      {
+        "name": "The One Ink, One Meaning Rule",
+        "body": "Lavender (blue in Latte) means selection or primary action; red and peach mean priority 5 and 4; green means live or success. No hue is borrowed for another job, and topic swatches are drawn from the hues no role owns (pink belongs to inline code, so it is not a swatch).",
+        "section": "colors"
+      },
+      {
+        "name": "The No Red Alarm Rule",
+        "body": "There is no danger colour. Destructive confirmation is an outlined neutral button (fg border on surface0); red stays reserved for priority.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Pure Ink Rule",
+        "body": "Text and surfaces never use #000 or #fff in Mocha; every ink comes from the Catppuccin ramp. The only white is Latte's accent-fg on blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Size Row Rule",
+        "body": "Inside a list row every element is 14px. An unread title is 600 in fg; a read title is 400 in fg-2; the preview, time and topic are 400 in fg-muted. Rank by weight and colour, never by size.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "The body sets `font-variant-numeric: tabular-nums` globally; counts, ×N, times and snooze times all align. List times are right-aligned in their own column.",
+        "section": "typography"
+      },
+      {
+        "name": "The Float-Only Shadow Rule",
+        "body": "Only surfaces that sit above the layout (menus, dialogs, drawers) cast a shadow. Rows, trays, panes and buttons stay flat; they separate by tone and hairline.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Three Radii Rule",
+        "body": "Corners come from control (6px), tray (10px) or panel (14px). A new component picks the family member of its tier, not a new value.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do route every colour through the semantic tokens (bg, bg-side, line, fg, accent...), never raw Catppuccin values, so Mocha and Latte stay in lockstep.",
+      "Do keep Mocha as the default regardless of OS preference, and use blue as the accent in Latte.",
+      "Do keep every element in a list row at 14px and rank with 600 vs 400 weight and fg vs fg-2 vs fg-muted.",
+      "Do show read state as the fixed-cell mark (filled accent dot / hollow ring) and make that mark the read toggle, 44px on touch.",
+      "Do reserve trays for group_key groups with a ×N count, and show dedup repeats inline with the repeat glyph and count.",
+      "Do pair every priority colour with a glyph and a \"P5\" / \"P4\" label, and render nothing for priority 3.",
+      "Do keep row actions visible on touch: the read toggle and a trailing archive button, with the topic swatch in front of the preview.",
+      "Do use tabular figures for every count and time, right-aligned in lists.",
+      "Do pick corners from 6px / 10px / 14px and separate regions with 1px surface0 hairlines."
+    ],
+    "donts": [
+      "Don't use red, or any new danger colour, for destructive actions; confirm with the outlined neutral confirm button.",
+      "Don't use lavender (or Latte blue) for anything but selection and the primary action, or green for anything but live and success.",
+      "Don't colour a topic with lavender, red, peach, green, flamingo or rosewater.",
+      "Don't use pure black or pure white ink in Mocha.",
+      "Don't put a shadow on rows, trays, panes or buttons; only floating menus, dialogs and the drawer get the Pop shadow.",
+      "Don't change type size inside a list row to create hierarchy.",
+      "Don't load a web display face; the system UI stack is the type."
+    ]
+  }
+}

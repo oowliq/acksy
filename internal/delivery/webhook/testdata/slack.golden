@@ -1,0 +1,28 @@
+{
+  "text": "Deploy \u0026lt;prod\u0026gt; failed: api is down @everyone \u0026lt;!channel\u0026gt;",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Deploy \u003cprod\u003e failed"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "plain_text",
+        "text": "api is down @everyone \u003c!channel\u003e"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "plain_text",
+          "text": "ci · P5 · ×2"
+        }
+      ]
+    }
+  ]
+}

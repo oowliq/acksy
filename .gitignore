@@ -1,0 +1,40 @@
+# Go
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+
+# Data
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Web
+node_modules/
+.pnpm-store/
+web/dist/*
+!web/dist/.gitkeep
+*.tsbuildinfo
+.vite/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# AI tooling: local settings, session plans, caches. The design briefs in
+# .impeccable/surfaces and design.json are kept (AGENTS.md points to them).
+.claude/
+/docs/superpowers/
+/.impeccable/*
+!/.impeccable/design.json
+!/.impeccable/surfaces/
+.tanstack/

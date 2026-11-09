@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "invalid",
+    "Msg": "message is required"
+  }
+}

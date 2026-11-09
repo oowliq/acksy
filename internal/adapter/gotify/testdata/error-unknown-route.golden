@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "not_found",
+    "Msg": "gotify route not found"
+  }
+}

@@ -1,0 +1,4 @@
+POST /gotify/message?token=ack_querytoken
+Content-Type: application/x-www-form-urlencoded
+
+title=my+title&message=my+message&priority=5

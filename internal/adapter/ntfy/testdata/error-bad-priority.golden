@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "invalid",
+    "Msg": "invalid priority \"loud\": use 1-5 or min, low, default, high, max, urgent"
+  }
+}

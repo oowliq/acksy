@@ -1,0 +1,21 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "mytopic",
+    "Title": "",
+    "Body": "Download complete",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "my-download-123",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "echo": {
+    "ID": "my-download-123",
+    "SequenceID": "my-download-123"
+  }
+}

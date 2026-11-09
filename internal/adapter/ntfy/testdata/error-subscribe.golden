@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "not_found",
+    "Msg": "ntfy subscriptions are not supported; read notifications through the Acksy API"
+  }
+}

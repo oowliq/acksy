@@ -1,0 +1,21 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "mytopic",
+    "Title": "",
+    "Body": "Download 50% ...",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "xE73Iyuabi",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "echo": {
+    "ID": "xE73Iyuabi",
+    "SequenceID": "xE73Iyuabi"
+  }
+}

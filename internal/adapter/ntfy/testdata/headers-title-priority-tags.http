@@ -1,0 +1,7 @@
+POST /ntfy/phil_alerts
+Title: Unauthorized access detected
+Priority: urgent
+Tags: warning,skull
+Authorization: Bearer ack_testtoken
+
+Remote access to phils-laptop detected. Act right away.

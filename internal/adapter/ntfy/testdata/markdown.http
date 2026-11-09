@@ -1,0 +1,4 @@
+POST /ntfy/mytopic
+Markdown: yes
+
+Look ma, **bold text**, *italics*, ...

@@ -1,0 +1,24 @@
+{
+  "op": "publish",
+  "token": "ack_apptoken",
+  "message": {
+    "Topic": "",
+    "Title": "backup",
+    "Body": "done",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "",
+    "ExpiresAt": null,
+    "Source": "gotify",
+    "TopicFromToken": true
+  },
+  "echo": {
+    "title": "backup",
+    "message": "done",
+    "priority": null,
+    "extras": null
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "mytopic",
+    "Title": "Nightly",
+    "Body": "Backup done",
+    "Priority": 4,
+    "Tags": [
+      "floppy_disk",
+      "ok"
+    ],
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "GeneratedID1",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "echo": {
+    "ID": "GeneratedID1",
+    "SequenceID": ""
+  }
+}

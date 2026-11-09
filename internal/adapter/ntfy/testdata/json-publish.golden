@@ -1,0 +1,36 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "mytopic",
+    "Title": "Low disk space alert",
+    "Body": "Disk space is low at 5.1 GB",
+    "Priority": 4,
+    "Tags": [
+      "warning",
+      "cd"
+    ],
+    "ClickURL": "https://homecamera.lan/xasds1h2xsSsa/",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "GeneratedID1",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "actions": [
+    {
+      "type": "view",
+      "label": "Admin panel",
+      "url": "https://filesrv.lan/admin"
+    },
+    {
+      "type": "view",
+      "label": "Attachment",
+      "url": "https://filesrv.lan/space.jpg"
+    }
+  ],
+  "echo": {
+    "ID": "GeneratedID1",
+    "SequenceID": ""
+  }
+}

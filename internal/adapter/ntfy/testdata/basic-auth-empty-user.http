@@ -1,0 +1,4 @@
+POST /ntfy/mysecrets
+Authorization: Basic OnRrX0FnUWRxN21WQm9GRDM3elFWTjI5Umh1TXpOSXoy
+
+Look ma, with auth

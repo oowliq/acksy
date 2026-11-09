@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "not_found",
+    "Msg": "only POST /message is supported"
+  }
+}

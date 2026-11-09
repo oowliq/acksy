@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "invalid",
+    "Msg": "Content-Type must be application/json or a form"
+  }
+}

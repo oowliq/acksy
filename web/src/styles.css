@@ -1,0 +1,309 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Acksy — "Bento" world on Catppuccin.
+ * Mocha is the default; Latte is the light theme ([data-theme='latte']).
+ * Components use the semantic tokens below, never raw palette values.
+ * One ink, one meaning: accent = selection & primary action, prio-high/prio-mid
+ * = priority 5/4 only, ok = success only.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Catppuccin Mocha */
+  --ctp-crust: #11111b;
+  --ctp-mantle: #181825;
+  --ctp-base: #1e1e2e;
+  --ctp-surface0: #313244;
+  --ctp-surface1: #45475a;
+  --ctp-surface2: #585b70;
+  --ctp-overlay2: #9399b2;
+  --ctp-subtext0: #a6adc8;
+  --ctp-subtext1: #bac2de;
+  --ctp-text: #cdd6f4;
+  --ctp-lavender: #b4befe;
+  --ctp-blue: #89b4fa;
+  --ctp-sapphire: #74c7ec;
+  --ctp-sky: #89dceb;
+  --ctp-teal: #94e2d5;
+  --ctp-green: #a6e3a1;
+  --ctp-yellow: #f9e2af;
+  --ctp-peach: #fab387;
+  --ctp-red: #f38ba8;
+  --ctp-mauve: #cba6f7;
+  --ctp-pink: #f5c2e7;
+  --ctp-flamingo: #f2cdcd;
+  --ctp-rosewater: #f5e0dc;
+
+  /* Semantic */
+  --bg: var(--ctp-base);
+  --bg-side: var(--ctp-mantle);
+  --bg-sunken: var(--ctp-crust);
+  --bg-hover: color-mix(in oklab, var(--ctp-surface0) 55%, transparent);
+  --bg-selected: var(--ctp-surface0);
+  --line: var(--ctp-surface0);
+  --line-strong: var(--ctp-surface1);
+  --fg: var(--ctp-text);
+  --fg-2: var(--ctp-subtext1);
+  --fg-muted: var(--ctp-subtext0);
+  --fg-faint: var(--ctp-overlay2);
+  --accent: var(--ctp-lavender);
+  --accent-fg: var(--ctp-crust);
+  --accent-soft: color-mix(in oklab, var(--ctp-lavender) 16%, transparent);
+  --prio-high: var(--ctp-red);
+  --prio-mid: var(--ctp-peach);
+  --ok: var(--ctp-green);
+  --code: var(--ctp-pink);
+  --shadow: 0 8px 24px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+
+  --radius-control: 6px;
+  --radius-tray: 10px;
+  --radius-panel: 14px;
+}
+
+[data-theme="latte"] {
+  color-scheme: light;
+
+  /* Catppuccin Latte */
+  --ctp-crust: #dce0e8;
+  --ctp-mantle: #e6e9ef;
+  --ctp-base: #eff1f5;
+  --ctp-surface0: #ccd0da;
+  --ctp-surface1: #bcc0cc;
+  --ctp-surface2: #acb0be;
+  --ctp-overlay2: #7c7f93;
+  --ctp-subtext0: #6c6f85;
+  --ctp-subtext1: #5c5f77;
+  --ctp-text: #4c4f69;
+  --ctp-lavender: #7287fd;
+  --ctp-blue: #1e66f5;
+  --ctp-sapphire: #209fb5;
+  --ctp-sky: #04a5e5;
+  --ctp-teal: #179299;
+  --ctp-green: #40a02b;
+  --ctp-yellow: #df8e1d;
+  --ctp-peach: #fe640b;
+  --ctp-red: #d20f39;
+  --ctp-mauve: #8839ef;
+  --ctp-pink: #ea76cb;
+  --ctp-flamingo: #dd7878;
+  --ctp-rosewater: #dc8a78;
+
+  /* Latte's lavender is too light to carry text; blue takes the accent role. */
+  --accent: var(--ctp-blue);
+  --accent-fg: #ffffff;
+  --accent-soft: color-mix(in oklab, var(--ctp-blue) 12%, transparent);
+  --fg-faint: var(--ctp-subtext0);
+  --code: #b0369a;
+  --shadow: 0 8px 24px -8px rgb(76 79 105 / 0.28), 0 2px 6px -2px rgb(76 79 105 / 0.18);
+}
+
+@theme inline {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --color-bg: var(--bg);
+  --color-side: var(--bg-side);
+  --color-sunken: var(--bg-sunken);
+  --color-hover: var(--bg-hover);
+  --color-selected: var(--bg-selected);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--fg-muted);
+  --color-faint: var(--fg-faint);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-prio-high: var(--prio-high);
+  --color-prio-mid: var(--prio-mid);
+  --color-ok: var(--ok);
+  --color-code: var(--code);
+
+  --radius-control: var(--radius-control);
+  --radius-tray: var(--radius-tray);
+  --radius-panel: var(--radius-panel);
+  --shadow-pop: var(--shadow);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-[14px] leading-[1.45] text-fg antialiased;
+    caret-color: var(--accent);
+    accent-color: var(--accent);
+    scrollbar-color: var(--line-strong) transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 35%, transparent);
+    color: var(--fg);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+  }
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Live rows restyle in place: a changed row glows once, then settles. */
+@keyframes acksy-live {
+  from {
+    background-color: var(--accent-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.live-flash {
+  animation: acksy-live 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-flash {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Markdown bodies */
+.md {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg-2);
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.8em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  color: var(--fg);
+  font-weight: 650;
+  line-height: 1.3;
+  margin-top: 1.4em;
+}
+.md h1 {
+  font-size: 1.3em;
+}
+.md h2 {
+  font-size: 1.15em;
+}
+.md h3,
+.md h4 {
+  font-size: 1em;
+}
+.md strong {
+  color: var(--fg);
+  font-weight: 650;
+}
+.md a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.md ul,
+.md ol {
+  padding-left: 1.4em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li + li {
+  margin-top: 0.25em;
+}
+.md li::marker {
+  color: var(--fg-faint);
+}
+.md .contains-task-list {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.md input[type="checkbox"] {
+  margin-right: 0.5em;
+  vertical-align: -1px;
+}
+.md blockquote {
+  border-left: 1px solid var(--line-strong);
+  padding-left: 1em;
+  color: var(--fg-muted);
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--code);
+  background: var(--bg-selected);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.md pre {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-tray);
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+  color: var(--fg);
+  font-size: 13px;
+}
+.md table {
+  border-collapse: collapse;
+  font-size: 14px;
+  display: block;
+  overflow-x: auto;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  text-align: left;
+}
+.md th {
+  background: var(--bg-side);
+  color: var(--fg);
+  font-weight: 600;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+}

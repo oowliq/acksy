@@ -1,0 +1,3 @@
+POST /ntfy/mytopic?message=hi
+
+this would be an attachment in ntfy

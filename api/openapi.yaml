@@ -1,0 +1,1916 @@
+openapi: 3.1.0
+info:
+  title: Acksy API
+  version: "1"
+  summary: Self-hosted, user-first notification hub.
+  description: |
+    Notifications belong to users; topics are optional, shareable categories.
+    Read state lives on the server and is synchronized across devices.
+
+    **Authentication.** Browsers use the `acksy_session` cookie set by
+    `POST /auth/login`. Scripts use API tokens: `Authorization: Bearer ack_…`.
+    Cross-origin browser requests with unsafe methods are rejected (CSRF protection).
+
+    **Errors** always have the shape `{"error": {"code": "...", "message": "..."}}`
+    with codes `invalid` (400), `unauthorized` (401), `forbidden` (403),
+    `not_found` (404), `method_not_allowed` (405), `conflict` (409),
+    `rate_limited` (429) and `internal` (500).
+
+    **Topic references** are `name` (your own topic, or a uniquely named shared
+    one) or `owner/name`.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: /api/v1
+security:
+  - bearerToken: []
+  - sessionCookie: []
+tags:
+  - name: auth
+  - name: notifications
+  - name: topics
+  - name: tokens
+  - name: webhooks
+    description: |
+      Outgoing webhooks of the caller (login session only). Each matching
+      notification (created, or raised again by a dedup repeat) is POSTed to
+      the URL, retried for about 11 hours on network errors, 408, 425, 429 and
+      5xx. Every request carries `X-Acksy-Event`, `X-Acksy-Delivery`,
+      `X-Acksy-Timestamp` and `X-Acksy-Signature: sha256=<hex>`, the
+      HMAC-SHA256 of `<timestamp>.<body>` with the webhook secret.
+  - name: push
+    description: Web Push subscriptions of the caller's browsers (login session only).
+  - name: realtime
+    description: Live event streams; every change to your notifications and topics.
+  - name: settings
+  - name: users
+    description: |
+      Instance administration (admin role and `admin` scope). Admin API tokens
+      can only read users and identities; creating, changing and deleting
+      users and linking identities need a login session, since they grant a
+      way to sign in.
+  - name: meta
+
+paths:
+  /version:
+    get:
+      tags: [meta]
+      operationId: getVersion
+      summary: Server build information
+      security: []
+      responses:
+        "200":
+          description: Build info
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Version" }
+
+  /openapi.yaml:
+    get:
+      tags: [meta]
+      operationId: getOpenAPI
+      summary: This document
+      security: []
+      responses:
+        "200":
+          description: OpenAPI document
+          content:
+            application/yaml: {}
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Log in with username and password
+      description: Sets the `acksy_session` cookie. Repeated failures for a username are throttled. Returns 403 when password login is disabled (`ACKSY_OIDC_DISABLE_PASSWORD_LOGIN`).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              additionalProperties: false
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Logged in
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429":
+          description: Too many failed attempts
+          headers:
+            Retry-After:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /auth/methods:
+    get:
+      tags: [auth]
+      operationId: getAuthMethods
+      summary: Sign-in methods enabled on this instance
+      description: Public. The login page uses it to show the password form and the SSO button.
+      security: []
+      responses:
+        "200":
+          description: Enabled methods
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthMethods" }
+
+  /auth/oidc/login:
+    get:
+      tags: [auth]
+      operationId: oidcLogin
+      summary: Start OIDC sign-in (browser navigation)
+      description: |
+        Redirects to the provider (authorization code flow with PKCE) and sets a
+        short-lived `acksy_oidc` cookie that binds the callback to this browser.
+        Only routed when OIDC is configured. On failure redirects to
+        `/login?error=oidc_unavailable`.
+      security: []
+      parameters:
+        - name: redirect
+          in: query
+          description: Same-origin path to open after sign-in (default `/`).
+          schema: { type: string }
+      responses:
+        "302": { description: Redirect to the provider }
+
+  /auth/oidc/callback:
+    get:
+      tags: [auth]
+      operationId: oidcCallback
+      summary: OIDC redirect URI
+      description: |
+        Register `<ACKSY_BASE_URL>/api/v1/auth/oidc/callback` at the provider.
+        On success sets the `acksy_session` cookie and redirects to the
+        requested path. On failure redirects to `/login?error=<code>` with
+        `oidc_denied`, `oidc_expired`, `oidc_failed`, `oidc_no_account` or
+        `account_disabled`.
+      security: []
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        "302": { description: Redirect to the app or back to the login page }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: End the current session
+      responses:
+        "204": { description: Logged out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: The authenticated user and credential
+      responses:
+        "200":
+          description: Current principal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [auth]
+      operationId: updateMe
+      summary: Update own profile (session only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                display_name: { type: string, maxLength: 128 }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /me/password:
+    post:
+      tags: [auth]
+      operationId: changePassword
+      summary: Change own password (session only)
+      description: Ends all other sessions of the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              additionalProperties: false
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, format: password, minLength: 8 }
+      responses:
+        "204": { description: Password changed }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /notifications:
+    get:
+      tags: [notifications]
+      operationId: listNotifications
+      summary: List own notifications, newest first
+      description: Requires `notifications:read`. Topic-restricted tokens only see their topics.
+      parameters:
+        - name: view
+          in: query
+          schema: { $ref: "#/components/schemas/View" }
+        - name: unread
+          in: query
+          schema: { type: boolean }
+        - name: topic
+          in: query
+          description: Topic reference.
+          schema: { type: string }
+        - name: no_topic
+          in: query
+          description: Only notifications without a topic.
+          schema: { type: boolean }
+        - name: min_priority
+          in: query
+          schema: { $ref: "#/components/schemas/Priority" }
+        - name: q
+          in: query
+          description: Words to find in title, body and tags (case-insensitive); all must match.
+          schema: { type: string, maxLength: 200 }
+        - name: group_key
+          in: query
+          schema: { type: string }
+        - name: before
+          in: query
+          description: Cursor from `next_cursor`.
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: A page of notifications
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPage" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [notifications]
+      operationId: publish
+      summary: Publish a message
+      description: |
+        Requires `notifications:publish`. Without `topic` the message goes to
+        the caller. With `topic` it goes to every member of the topic; a
+        missing own topic is created (not for topic-restricted tokens).
+        A `dedup_key` matching an existing notification of a recipient in the
+        same topic (or, without a topic, among their topic-less notifications)
+        updates it in place, bumps `repeat_count` and resets its read state.
+
+        Publishing is rate limited per API token and per user
+        (`ACKSY_PUBLISH_LIMIT_TOKEN`, `ACKSY_PUBLISH_LIMIT_USER`, per minute);
+        the ntfy and gotify adapters share the same budget.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublishRequest" }
+      responses:
+        "201":
+          description: Published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublishResult" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /notifications/counts:
+    get:
+      tags: [notifications]
+      operationId: getCounts
+      summary: Unread inbox counts
+      responses:
+        "200":
+          description: Counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Counts" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /notifications/bulk:
+    post:
+      tags: [notifications]
+      operationId: bulkNotifications
+      summary: Apply a read-state action to many notifications
+      description: |
+        Requires `notifications:write`. Selectors combine with AND; at least one
+        of `ids`, `topic`, `no_topic`, `group_key` or `all` is required.
+        `read` and `archive` default to the inbox view, others to `all`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BulkRequest" }
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [affected]
+                properties:
+                  affected: { type: integer }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /notifications/{id}/actions/{index}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+      - name: index
+        in: path
+        required: true
+        description: Position of the action in `actions` (0-based).
+        schema: { type: integer, minimum: 0 }
+    post:
+      tags: [notifications]
+      operationId: runAction
+      summary: Run an http action
+      description: |
+        The server sends the action's request (method, URL, headers, body as
+        published) and reports the result; 2xx is success. With `clear`, success
+        also marks the notification read. Needs `notifications:write`; only the
+        notification's recipient can run it. The same action cannot run twice at
+        once (409), and runs are rate limited per user (429). LAN targets need
+        `ACKSY_ACTIONS_ALLOW_PRIVATE`.
+      responses:
+        "200":
+          description: The action ran (check `ok`)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, status, cleared]
+                properties:
+                  ok: { type: boolean }
+                  status: { type: integer, description: HTTP status, 0 when there was no response. }
+                  error: { type: string }
+                  cleared: { type: boolean }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /notifications/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [notifications]
+      operationId: getNotification
+      summary: Get one notification
+      responses:
+        "200":
+          description: Notification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [notifications]
+      operationId: updateNotification
+      summary: Change read state
+      description: Requires `notifications:write`. Archiving also marks as read.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                read: { type: boolean }
+                archived: { type: boolean }
+                snoozed_until:
+                  description: Future time, or null to clear the snooze.
+                  type: [string, "null"]
+                  format: date-time
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [notifications]
+      operationId: deleteNotification
+      summary: Delete a notification
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /events:
+    get:
+      tags: [realtime]
+      operationId: streamEvents
+      summary: Realtime event stream (Server-Sent Events)
+      description: |
+        Requires `notifications:read`. Every frame has `id: <seq>` and a
+        single-line JSON `data:` that is either an `Event` or a `StreamControl`.
+
+        Resume with `?since=<seq>` or the `Last-Event-ID` header (EventSource
+        sends it automatically). The server first replays stored events after
+        that position, then sends `{"type":"ready","seq":N}` and switches to
+        live events. Without a position it sends `ready` with the current seq.
+        If the position is no longer available (events pruned) or unknown, the
+        server sends `{"type":"reset","seq":N}`: refetch your state, then keep
+        consuming. The stream closes when the credential is revoked; reconnect.
+        Comment lines (`: ping`) keep the connection alive.
+
+        Topic-restricted tokens only receive events for their topics; deletion
+        and bulk events (which carry only IDs) are always delivered.
+      parameters:
+        - $ref: "#/components/parameters/Since"
+        - name: Last-Event-ID
+          in: header
+          schema: { type: string }
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/StreamMessage" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /ws:
+    get:
+      tags: [realtime]
+      operationId: streamEventsWebSocket
+      summary: Realtime event stream (WebSocket)
+      description: |
+        Same semantics and messages as `/events`, one JSON text frame per
+        message, server to client only. Cross-origin handshakes are rejected.
+        The server closes with status 1013 when the stream ends (credential
+        revoked, shutdown); reconnect with `since`.
+      parameters:
+        - $ref: "#/components/parameters/Since"
+      responses:
+        "101": { description: Switching to the WebSocket protocol }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /topics:
+    get:
+      tags: [topics]
+      operationId: listTopics
+      summary: Topics the caller owns or is a member of
+      responses:
+        "200":
+          description: Topics
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Topic" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [topics]
+      operationId: createTopic
+      summary: Create a topic
+      description: Requires `topics:manage`; not available to topic-restricted tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { $ref: "#/components/schemas/TopicName" }
+                title: { type: string, maxLength: 128 }
+                description: { type: string, maxLength: 1024 }
+                default_priority: { $ref: "#/components/schemas/Priority" }
+                retention_days: { $ref: "#/components/schemas/TopicRetentionDays" }
+                max_notifications: { $ref: "#/components/schemas/TopicMaxNotifications" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Topic" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /topics/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [topics]
+      operationId: getTopic
+      summary: Get a topic
+      responses:
+        "200":
+          description: Topic
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Topic" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [topics]
+      operationId: updateTopic
+      summary: Update a topic (owner)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, maxLength: 128 }
+                description: { type: string, maxLength: 1024 }
+                default_priority:
+                  description: null resets to the global default.
+                  oneOf:
+                    - $ref: "#/components/schemas/Priority"
+                    - type: "null"
+                retention_days:
+                  description: null inherits the instance retention.
+                  oneOf:
+                    - $ref: "#/components/schemas/TopicRetentionDays"
+                    - type: "null"
+                max_notifications:
+                  description: null removes the topic's count limit.
+                  oneOf:
+                    - $ref: "#/components/schemas/TopicMaxNotifications"
+                    - type: "null"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Topic" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [topics]
+      operationId: deleteTopic
+      summary: Delete a topic (owner)
+      description: Existing notifications are kept without a topic.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /topics/{id}/members:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [topics]
+      operationId: listTopicMembers
+      summary: List members
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/TopicMember" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /topics/{id}/members/{userID}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+      - name: userID
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      tags: [topics]
+      operationId: removeTopicMember
+      summary: Remove a member (owner) or leave (self)
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /topics/{id}/invites:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [topics]
+      operationId: listTopicInvites
+      summary: Pending invitations of the topic (owner)
+      responses:
+        "200":
+          description: Invitations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/TopicInvite" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [topics]
+      operationId: inviteToTopic
+      summary: Invite a user to the topic (owner)
+      description: |
+        Sharing needs consent: the user gets a notification about the
+        invitation and becomes a member (a recipient of the topic) only by
+        accepting it. Unknown users are 404, members and users already
+        invited 409. Invitations count against the publish rate limit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              additionalProperties: false
+              properties:
+                username: { type: string }
+      responses:
+        "201":
+          description: Invited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TopicInvite" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /topics/{id}/invites/{userID}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+      - name: userID
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      tags: [topics]
+      operationId: revokeTopicInvite
+      summary: Withdraw a pending invitation (owner)
+      responses:
+        "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /invitations:
+    get:
+      tags: [topics]
+      operationId: listInvitations
+      summary: The caller's pending topic invitations
+      description: Topic-restricted tokens always get an empty list.
+      responses:
+        "200":
+          description: Invitations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/TopicInvite" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /invitations/{topicID}:
+    parameters:
+      - $ref: "#/components/parameters/TopicID"
+    delete:
+      tags: [topics]
+      operationId: declineInvitation
+      summary: Decline an invitation
+      description: Requires `topics:manage`; not for topic-restricted tokens.
+      responses:
+        "204": { description: Declined }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /invitations/{topicID}/accept:
+    parameters:
+      - $ref: "#/components/parameters/TopicID"
+    post:
+      tags: [topics]
+      operationId: acceptInvitation
+      summary: Accept an invitation and join the topic
+      description: Requires `topics:manage`; not for topic-restricted tokens.
+      responses:
+        "200":
+          description: The joined topic
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Topic" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /webhooks:
+    get:
+      tags: [webhooks]
+      operationId: listWebhooks
+      summary: The caller's webhooks
+      responses:
+        "200":
+          description: Webhooks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Webhook" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [webhooks]
+      operationId: createWebhook
+      summary: Create a webhook
+      description: The response is the only time the signing secret is shown (besides rotation).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WebhookRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [webhook, secret]
+                properties:
+                  webhook: { $ref: "#/components/schemas/Webhook" }
+                  secret: { type: string, description: "Signing secret (`whsec_…`)." }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /webhooks/{id}:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    get:
+      tags: [webhooks]
+      operationId: getWebhook
+      summary: A webhook
+      responses:
+        "200":
+          description: Webhook
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Webhook" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [webhooks]
+      operationId: updateWebhook
+      summary: Change a webhook
+      description: Omitted fields are unchanged. `topics` replaces the filter; an empty list means all notifications.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WebhookRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Webhook" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [webhooks]
+      operationId: deleteWebhook
+      summary: Delete a webhook and its queued deliveries
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /webhooks/{id}/rotate-secret:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    post:
+      tags: [webhooks]
+      operationId: rotateWebhookSecret
+      summary: Replace the signing secret
+      responses:
+        "200":
+          description: New secret, shown once
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret]
+                properties:
+                  secret: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /webhooks/{id}/test:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    post:
+      tags: [webhooks]
+      operationId: testWebhook
+      summary: Send a sample notification now
+      description: One request (event `webhook.test`), no retries. 409 when webhooks are disabled on the server.
+      responses:
+        "200":
+          description: What the receiver answered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, ok]
+                properties:
+                  status: { type: integer, description: HTTP status, 0 when there was no response. }
+                  ok: { type: boolean }
+                  error: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /webhooks/{id}/deliveries:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    get:
+      tags: [webhooks]
+      operationId: listWebhookDeliveries
+      summary: Pending and failed deliveries (newest 50)
+      description: Delivered requests are removed from the queue; failed ones are kept for `ACKSY_WEBHOOK_FAILED_RETENTION`.
+      responses:
+        "200":
+          description: Deliveries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WebhookDelivery" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /push/config:
+    get:
+      tags: [push]
+      operationId: getPushConfig
+      summary: Whether Web Push is enabled, and the VAPID public key
+      description: Pass `public_key` as `applicationServerKey` to `PushManager.subscribe()`.
+      responses:
+        "200":
+          description: Push configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PushConfig" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /push/subscriptions:
+    get:
+      tags: [push]
+      operationId: listPushSubscriptions
+      summary: The caller's push subscriptions (devices)
+      responses:
+        "200":
+          description: Subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PushSubscription" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [push]
+      operationId: createPushSubscription
+      summary: Register this browser for Web Push
+      description: |
+        The body is `PushSubscription.toJSON()` plus optional `name` and
+        `min_priority` (default 3): only notifications with at least that
+        priority are pushed to this device. Registering a known endpoint
+        updates it; if another user owned it (same browser), it moves to the
+        caller. At most 20 subscriptions per user. 409 when Web Push is
+        disabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushSubscriptionRequest" }
+      responses:
+        "201":
+          description: Subscribed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PushSubscription" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /push/subscriptions/{id}:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    patch:
+      tags: [push]
+      operationId: updatePushSubscription
+      summary: Rename a device or change its priority threshold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, maxLength: 64 }
+                min_priority: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PushSubscription" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [push]
+      operationId: deletePushSubscription
+      summary: Stop pushing to a device
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /push/subscriptions/{id}/test:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    post:
+      tags: [push]
+      operationId: testPushSubscription
+      summary: Send a test notification to a device now
+      description: |
+        Returns 204 when the push service accepted the message. 404 when the
+        browser revoked the subscription (it is then removed), 409 when the
+        push service rejected it or Web Push is disabled.
+      responses:
+        "204": { description: Accepted by the push service }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /tokens:
+    get:
+      tags: [tokens]
+      operationId: listTokens
+      summary: List own API tokens (session only)
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/APIToken" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [tokens]
+      operationId: createToken
+      summary: Create an API token (session only)
+      description: The secret is returned once and cannot be retrieved later.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, scopes]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 64 }
+                scopes:
+                  type: array
+                  minItems: 1
+                  items: { $ref: "#/components/schemas/Scope" }
+                topics:
+                  description: Topic references to restrict the token to. Empty means all topics.
+                  type: array
+                  items: { type: string }
+                expires_at: { type: string, format: date-time }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, secret]
+                properties:
+                  token: { $ref: "#/components/schemas/APIToken" }
+                  secret: { type: string, example: ack_k3j5x7… }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tokens/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    delete:
+      tags: [tokens]
+      operationId: deleteToken
+      summary: Revoke a token (session only)
+      responses:
+        "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /settings/oidc:
+    get:
+      tags: [settings]
+      operationId: getOIDCSettings
+      summary: Single sign-on settings (admin, session only)
+      description: The client secret is never returned; `client_secret_set` says whether one is stored.
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OIDCSettings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      tags: [settings]
+      operationId: putOIDCSettings
+      summary: Change single sign-on settings (admin, session only)
+      description: |
+        Effective on this instance at once and on others within 15 seconds.
+        Turning off password sign-in requires the caller to have an identity
+        at the provider (409 otherwise).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OIDCSettingsInput" }
+      responses:
+        "200":
+          description: Saved settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OIDCSettings" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /settings/oidc/test:
+    post:
+      tags: [settings]
+      operationId: testOIDCSettings
+      summary: Check unsaved settings by fetching the provider metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OIDCSettingsInput" }
+      responses:
+        "200":
+          description: Result (validation and discovery failures are reported here, not as errors)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+                  error: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: List users
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [users]
+      operationId: createUser
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              additionalProperties: false
+              properties:
+                username: { $ref: "#/components/schemas/Username" }
+                password:
+                  description: Optional; users without a password can only sign in via OIDC.
+                  type: string
+                  format: password
+                  minLength: 8
+                display_name: { type: string, maxLength: 128 }
+                email: { type: string, format: email }
+                role: { $ref: "#/components/schemas/Role" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /users/{id}/identities:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [users]
+      operationId: listUserIdentities
+      summary: A user's linked OIDC identities (admin)
+      responses:
+        "200":
+          description: Identities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Identity" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [users]
+      operationId: linkUserIdentity
+      summary: Link an OIDC identity to the user (admin)
+      description: An empty issuer means the configured provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject]
+              additionalProperties: false
+              properties:
+                issuer: { type: string }
+                subject: { type: string, minLength: 1 }
+      responses:
+        "201":
+          description: Linked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Identity" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [users]
+      operationId: unlinkUserIdentity
+      summary: Remove a linked OIDC identity (admin)
+      description: Issuer and subject are query parameters because subjects may contain "/" or "|".
+      parameters:
+        - { name: issuer, in: query, description: Empty means the configured provider., schema: { type: string } }
+        - { name: subject, in: query, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Unlinked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ID"
+    get:
+      tags: [users]
+      operationId: getUser
+      summary: Get a user
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [users]
+      operationId: updateUser
+      summary: Update a user
+      description: |
+        Disabling a user or resetting the password ends their sessions. The last
+        active admin cannot be demoted or disabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                display_name: { type: string, maxLength: 128 }
+                email: { type: string, format: email }
+                role: { $ref: "#/components/schemas/Role" }
+                disabled: { type: boolean }
+                password: { type: string, format: password, minLength: 8 }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [users]
+      operationId: deleteUser
+      summary: Delete a user and everything they own
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+components:
+  securitySchemes:
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: API token (`ack_…`).
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: acksy_session
+
+  parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    TopicID:
+      name: topicID
+      in: path
+      required: true
+      schema: { type: string }
+    Since:
+      name: since
+      in: query
+      description: Resume after this event sequence number.
+      schema: { type: integer, format: int64, minimum: 0 }
+
+  responses:
+    RateLimited:
+      description: Rate limit exceeded (code `rate_limited`)
+      headers:
+        Retry-After:
+          description: Seconds until the next request may succeed.
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Invalid:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Missing scope, role or ownership
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found (or not visible to the caller)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflicts with existing state
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    WebhookRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, maxLength: 64 }
+        url: { type: string, format: uri, description: "http(s). Private addresses need `ACKSY_WEBHOOK_ALLOW_PRIVATE`." }
+        format: { type: string, enum: [acksy, discord, slack], default: acksy }
+        topics:
+          type: array
+          maxItems: 32
+          items: { type: string }
+          description: Topic references (`name` or `owner/name`); empty means all notifications.
+        min_priority: { type: integer, minimum: 1, maximum: 5, default: 1 }
+        enabled: { type: boolean, default: true }
+    Webhook:
+      type: object
+      required: [id, name, url, format, topic_ids, min_priority, enabled, created_at, updated_at, last_success_at, last_failure_at]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        url: { type: string, description: "Origin only (e.g. `https://discord.com/…`); the full URL may hold a credential." }
+        format: { type: string, enum: [acksy, discord, slack] }
+        topic_ids: { type: array, items: { type: string } }
+        min_priority: { type: integer, minimum: 1, maximum: 5 }
+        enabled: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        last_success_at: { type: [string, "null"], format: date-time }
+        last_failure_at: { type: [string, "null"], format: date-time }
+        last_error: { type: string }
+    WebhookDelivery:
+      type: object
+      required: [id, webhook_id, event, attempts, next_attempt_at, created_at]
+      properties:
+        id: { type: string }
+        webhook_id: { type: string }
+        event: { type: string, enum: [notification.created, notification.updated] }
+        attempts: { type: integer }
+        next_attempt_at: { type: [string, "null"], format: date-time, description: Null once given up. }
+        last_status: { type: integer }
+        last_error: { type: string }
+        created_at: { type: string, format: date-time }
+        failed_at: { type: string, format: date-time }
+
+    PushConfig:
+      type: object
+      required: [enabled, public_key]
+      properties:
+        enabled: { type: boolean }
+        public_key:
+          type: string
+          description: VAPID public key (unpadded base64url), empty when disabled.
+    PushSubscriptionRequest:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint: { type: string, format: uri, description: Must be https. }
+        expirationTime: { type: [integer, "null"], description: Sent by browsers; ignored. }
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string }
+            auth: { type: string }
+        name: { type: string, maxLength: 64 }
+        min_priority: { type: integer, minimum: 1, maximum: 5, default: 3 }
+    PushSubscription:
+      type: object
+      description: A device. The endpoint and keys are secret and never returned.
+      required: [id, name, min_priority, created_at, last_success_at, failures, push_service]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        min_priority: { type: integer, minimum: 1, maximum: 5 }
+        created_at: { type: string, format: date-time }
+        last_success_at: { type: [string, "null"], format: date-time }
+        failures: { type: integer, description: Consecutive failed pushes. }
+        push_service: { type: string, description: 'Push service host, e.g. "fcm.googleapis.com".' }
+
+    AuthMethods:
+      type: object
+      required: [password, oidc]
+      properties:
+        password:
+          type: boolean
+          description: Whether `POST /auth/login` accepts passwords.
+        oidc:
+          description: The OIDC provider, or null when OIDC is not configured.
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [name, login_url]
+              properties:
+                name: { type: string, description: 'Button label, e.g. "Authentik".' }
+                login_url: { type: string, description: Path to navigate the browser to. }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+
+    Version:
+      type: object
+      required: [version, commit, date]
+      properties:
+        version: { type: string }
+        commit: { type: string }
+        date: { type: string }
+
+    Username:
+      type: string
+      pattern: "^[a-z0-9][a-z0-9._-]{1,31}$"
+    TopicName:
+      type: string
+      pattern: "^[a-z0-9][a-z0-9_-]{0,63}$"
+    Role:
+      type: string
+      enum: [admin, user]
+    Scope:
+      type: string
+      enum: [notifications:publish, notifications:read, notifications:write, topics:manage, admin]
+    Priority:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: 1 = min, 3 = default, 5 = urgent.
+    View:
+      type: string
+      enum: [inbox, archived, snoozed, all]
+      default: inbox
+      description: inbox = not archived and not snoozed.
+
+    User:
+      type: object
+      required: [id, username, display_name, role, has_password, created_at, updated_at]
+      properties:
+        id: { type: string }
+        has_password: { type: boolean, description: False for single-sign-on-only users. }
+        username: { $ref: "#/components/schemas/Username" }
+        display_name: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        disabled_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    OIDCSettings:
+      type: object
+      required: [enabled, issuer, client_id, client_secret_set, name, scopes, username_claim, role_claim, admin_values, auto_create, disable_password_login, redirect_url, updated_at]
+      properties:
+        enabled: { type: boolean }
+        issuer: { type: string }
+        client_id: { type: string }
+        client_secret_set: { type: boolean }
+        name: { type: string, description: Sign-in button label. }
+        scopes: { type: array, items: { type: string } }
+        username_claim: { type: string }
+        role_claim: { type: string }
+        admin_values: { type: array, items: { type: string } }
+        auto_create: { type: boolean }
+        disable_password_login: { type: boolean }
+        redirect_url: { type: string, description: Callback to register at the provider; empty without ACKSY_BASE_URL. }
+        updated_at: { type: [string, "null"], format: date-time }
+    OIDCSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        issuer: { type: string }
+        client_id: { type: string }
+        client_secret: { type: string, description: Omit to keep the stored secret; empty string removes it. }
+        name: { type: string }
+        scopes: { type: array, items: { type: string } }
+        username_claim: { type: string }
+        role_claim: { type: string }
+        admin_values: { type: array, items: { type: string } }
+        auto_create: { type: boolean }
+        disable_password_login: { type: boolean }
+
+    Identity:
+      type: object
+      required: [issuer, subject, user_id, created_at]
+      properties:
+        issuer: { type: string }
+        subject: { type: string }
+        user_id: { type: string }
+        created_at: { type: string, format: date-time }
+        last_login_at: { type: string, format: date-time }
+
+    Me:
+      type: object
+      required: [user, auth]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        auth:
+          type: object
+          required: [type, scopes, has_password]
+          properties:
+            type: { type: string, enum: [session, token] }
+            has_password:
+              type: boolean
+              description: Whether the user can sign in with a password.
+            scopes:
+              type: array
+              items: { $ref: "#/components/schemas/Scope" }
+            token_id: { type: string }
+            topic_ids:
+              type: array
+              items: { type: string }
+
+    Topic:
+      type: object
+      required: [id, owner_id, owner_username, name, title, description, member_count, created_at, updated_at]
+      properties:
+        id: { type: string }
+        owner_id: { type: string }
+        owner_username: { type: string }
+        name: { $ref: "#/components/schemas/TopicName" }
+        title: { type: string }
+        description: { type: string }
+        default_priority: { $ref: "#/components/schemas/Priority" }
+        retention_days:
+          oneOf: [{ $ref: "#/components/schemas/TopicRetentionDays" }, { type: "null" }]
+        max_notifications:
+          oneOf: [{ $ref: "#/components/schemas/TopicMaxNotifications" }, { type: "null" }]
+        role:
+          type: string
+          enum: [owner, member]
+          description: The caller's role.
+        member_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    TopicRetentionDays:
+      type: integer
+      minimum: 1
+      maximum: 3650
+      description: |
+        Read (and archived) notifications of this topic are deleted this many
+        days after their last change, instead of the instance's
+        `ACKSY_RETENTION_READ` / per-priority TTL. Applies to every member's copy.
+    TopicMaxNotifications:
+      type: integer
+      minimum: 10
+      maximum: 1000000
+      description: |
+        Each member keeps at most this many notifications of the topic; the
+        oldest read ones are deleted first, unread ones only when needed.
+
+    TopicInvite:
+      type: object
+      required: [topic_id, topic_name, topic_title, owner_username, user_id, username, created_at]
+      properties:
+        topic_id: { type: string }
+        topic_name: { type: string }
+        topic_title: { type: string }
+        owner_username: { type: string }
+        user_id: { type: string, description: The invited user. }
+        username: { type: string }
+        created_at: { type: string, format: date-time }
+
+    TopicMember:
+      type: object
+      required: [user_id, username, role, created_at]
+      properties:
+        user_id: { type: string }
+        username: { type: string }
+        role: { type: string, enum: [owner, member] }
+        created_at: { type: string, format: date-time }
+
+    APIToken:
+      type: object
+      required: [id, user_id, name, prefix, scopes, topic_ids, created_at]
+      properties:
+        id: { type: string }
+        user_id: { type: string }
+        name: { type: string }
+        prefix:
+          type: string
+          description: First characters of the secret, for identification.
+        scopes:
+          type: array
+          items: { $ref: "#/components/schemas/Scope" }
+        topic_ids:
+          type: array
+          items: { type: string }
+        expires_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+
+    Action:
+      type: object
+      description: |
+        A button. `view` opens `url` in the client. `http` is run by the
+        server when a recipient presses it (`POST /notifications/{id}/actions/{index}`);
+        its headers and body are never returned, and `url` is shown without
+        query and credentials.
+      required: [type, label, url]
+      properties:
+        type: { type: string, enum: [view, http] }
+        label: { type: string, maxLength: 64 }
+        url: { type: string, format: uri }
+        method: { type: string, enum: [GET, POST, PUT, PATCH, DELETE], description: http only. }
+        clear: { type: boolean, description: "http only: mark the notification read on success." }
+
+    ActionInput:
+      type: object
+      required: [label, url]
+      additionalProperties: false
+      properties:
+        type: { type: string, enum: [view, http], default: view }
+        label: { type: string, maxLength: 64 }
+        url: { type: string, format: uri }
+        method: { type: string, enum: [GET, POST, PUT, PATCH, DELETE], default: POST, description: http only. }
+        headers:
+          type: object
+          maxProperties: 10
+          additionalProperties: { type: string }
+          description: http only. Kept secret from recipients (e.g. an Authorization header).
+        body: { type: string, maxLength: 8192, description: "http only, secret. Sent as application/json unless headers say otherwise." }
+        clear: { type: boolean, default: false, description: "http only: mark the notification read on success." }
+
+    PublishRequest:
+      type: object
+      additionalProperties: false
+      description: At least one of title or body is required.
+      properties:
+        topic:
+          type: string
+          description: Topic reference. Omit to notify yourself.
+        title: { type: string, maxLength: 256 }
+        body:
+          type: string
+          description: GitHub-flavored Markdown, up to 64 KiB.
+        priority: { $ref: "#/components/schemas/Priority" }
+        tags:
+          type: array
+          maxItems: 16
+          items: { type: string, maxLength: 64 }
+        click_url: { type: string, format: uri }
+        actions:
+          type: array
+          maxItems: 4
+          items: { $ref: "#/components/schemas/ActionInput" }
+        group_key:
+          type: string
+          maxLength: 256
+          description: Notifications with the same key are grouped in clients.
+        dedup_key:
+          type: string
+          maxLength: 256
+          description: A repeat with the same key updates the existing notification.
+        expires_at: { type: string, format: date-time }
+
+    PublishResult:
+      type: object
+      required: [message_id, recipients, deduplicated]
+      properties:
+        message_id: { type: string }
+        recipients: { type: integer }
+        deduplicated: { type: integer }
+        notification_id:
+          type: string
+          description: The caller's own copy, when the caller is a recipient.
+
+    Notification:
+      type: object
+      required: [id, user_id, message_id, topic, title, body, priority, tags, actions, repeat_count, source,
+                 created_at, updated_at, read_at, archived_at, snoozed_until]
+      properties:
+        id: { type: string }
+        user_id: { type: string }
+        message_id:
+          type: string
+          description: Shared by all recipients of one publish.
+        topic:
+          oneOf:
+            - type: object
+              required: [id, name]
+              properties:
+                id: { type: string }
+                name: { type: string }
+            - type: "null"
+        title: { type: string }
+        body: { type: string }
+        priority: { $ref: "#/components/schemas/Priority" }
+        tags:
+          type: array
+          items: { type: string }
+        click_url: { type: string }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/Action" }
+        group_key: { type: string }
+        dedup_key: { type: string }
+        repeat_count: { type: integer }
+        source:
+          type: string
+          description: Ingest adapter (acksy, ntfy, gotify).
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        read_at: { type: [string, "null"], format: date-time }
+        archived_at: { type: [string, "null"], format: date-time }
+        snoozed_until: { type: [string, "null"], format: date-time }
+
+    NotificationPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Notification" }
+        next_cursor: { type: string }
+
+    Counts:
+      type: object
+      required: [unread, by_topic, snoozed]
+      properties:
+        unread: { type: integer }
+        snoozed: { type: integer, description: Snoozed notifications that are not archived. }
+        by_topic:
+          type: object
+          description: Unread count per topic ID; the empty key counts notifications without a topic.
+          additionalProperties: { type: integer }
+
+    Event:
+      type: object
+      required: [seq, type, data, created_at]
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: Per-user, gapless, increasing.
+        type:
+          type: string
+          enum: [notification.created, notification.updated, notification.deleted, notifications.bulk, topic.changed, topic.removed, invitations.changed]
+        data:
+          description: |
+            notification.created / notification.updated: a Notification.
+            notification.deleted, topic.removed: {"id": "..."}.
+            invitations.changed: {"id": "<topic id>"}, sent to the invitee and the topic owner.
+            notifications.bulk: {"action", "ids", "at"}.
+            topic.changed: a Topic.
+        created_at: { type: string, format: date-time }
+
+    StreamControl:
+      type: object
+      required: [type, seq]
+      properties:
+        type: { type: string, enum: [ready, reset] }
+        seq: { type: integer, format: int64 }
+
+    StreamMessage:
+      oneOf:
+        - $ref: "#/components/schemas/Event"
+        - $ref: "#/components/schemas/StreamControl"
+
+    BulkRequest:
+      type: object
+      required: [action]
+      additionalProperties: false
+      properties:
+        action: { type: string, enum: [read, unread, archive, unarchive, delete] }
+        ids:
+          type: array
+          maxItems: 10000
+          items: { type: string }
+        topic: { type: string }
+        no_topic: { type: boolean }
+        group_key: { type: string }
+        view: { $ref: "#/components/schemas/View" }
+        all: { type: boolean }
+        q:
+          type: string
+          maxLength: 200
+          description: Narrows the selection to notifications matching these words.
+        min_priority:
+          allOf: [{ $ref: "#/components/schemas/Priority" }]
+          description: Narrows the selection to this priority and above.

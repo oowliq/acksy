@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "invalid",
+    "Msg": "file attachments are not supported by Acksy; send text, or link a file with X-Attach"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "op": "publish",
+  "token": "ack_querytoken",
+  "message": {
+    "Topic": "",
+    "Title": "my title",
+    "Body": "my message",
+    "Priority": 3,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "",
+    "ExpiresAt": null,
+    "Source": "gotify",
+    "TopicFromToken": true
+  },
+  "echo": {
+    "title": "my title",
+    "message": "my message",
+    "priority": 5,
+    "extras": null
+  }
+}

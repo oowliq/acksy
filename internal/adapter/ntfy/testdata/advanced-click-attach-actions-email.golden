@@ -1,0 +1,34 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "mydoorbell",
+    "Title": "",
+    "Body": "There's someone at the door. 🐶\n\nPlease check if it's a good boy or a hooman.\nDoggies have been known to ring the doorbell.",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "https://home.nest.com/",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "GeneratedID1",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "actions": [
+    {
+      "type": "http",
+      "label": "Open door",
+      "url": "https://api.nest.com/open/yAxkasd",
+      "clear": true
+    },
+    {
+      "type": "view",
+      "label": "Attachment",
+      "url": "https://nest.com/view/yAxkasd.jpg"
+    }
+  ],
+  "echo": {
+    "ID": "GeneratedID1",
+    "SequenceID": ""
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "op": "publish",
+  "message": {
+    "Topic": "myhome",
+    "Title": "",
+    "Body": "You left the house. Turn down the A/C?",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "GeneratedID1",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "actions": [
+    {
+      "type": "view",
+      "label": "Open portal",
+      "url": "https://home.nest.com/"
+    },
+    {
+      "type": "http",
+      "label": "Turn down",
+      "url": "https://api.nest.com/",
+      "body": "{\"temperature\": 65}"
+    }
+  ],
+  "echo": {
+    "ID": "GeneratedID1",
+    "SequenceID": ""
+  }
+}

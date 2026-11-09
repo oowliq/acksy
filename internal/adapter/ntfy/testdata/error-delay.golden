@@ -1,0 +1,6 @@
+{
+  "error": {
+    "Kind": "invalid",
+    "Msg": "delayed delivery (X-Delay) is not supported by Acksy"
+  }
+}

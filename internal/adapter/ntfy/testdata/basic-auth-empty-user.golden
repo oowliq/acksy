@@ -1,0 +1,22 @@
+{
+  "op": "publish",
+  "token": "tk_AgQdq7mVBoFD37zQVN29RhuMzNIz2",
+  "message": {
+    "Topic": "mysecrets",
+    "Title": "",
+    "Body": "Look ma, with auth",
+    "Priority": 0,
+    "Tags": null,
+    "ClickURL": "",
+    "Actions": null,
+    "GroupKey": "",
+    "DedupKey": "GeneratedID1",
+    "ExpiresAt": null,
+    "Source": "ntfy",
+    "TopicFromToken": false
+  },
+  "echo": {
+    "ID": "GeneratedID1",
+    "SequenceID": ""
+  }
+}

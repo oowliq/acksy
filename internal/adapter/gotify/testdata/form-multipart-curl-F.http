@@ -1,0 +1,16 @@
+POST /gotify/message?token=ack_querytoken
+Content-Type: multipart/form-data; boundary=X-acksy-boundary
+
+--X-acksy-boundary
+Content-Disposition: form-data; name="title"
+
+my title
+--X-acksy-boundary
+Content-Disposition: form-data; name="message"
+
+my message
+--X-acksy-boundary
+Content-Disposition: form-data; name="priority"
+
+5
+--X-acksy-boundary--

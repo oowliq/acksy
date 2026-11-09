@@ -1,0 +1,5 @@
+POST /gotify/message
+X-Gotify-Key: ack_apptoken
+Content-Type: application/json
+
+{"message":"done","title":"backup"}

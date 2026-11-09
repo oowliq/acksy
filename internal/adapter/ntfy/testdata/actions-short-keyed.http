@@ -1,0 +1,4 @@
+POST /ntfy/myhome
+Actions: action=view, label="Open, portal", url=https://home.nest.com/; broadcast, Take picture, extras.cmd=pic
+
+Doorbell

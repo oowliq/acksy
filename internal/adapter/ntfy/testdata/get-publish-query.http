@@ -1,0 +1,1 @@
+GET /ntfy/mytopic/trigger?message=Backup+done&t=Nightly&prio=high&tags=floppy_disk,ok

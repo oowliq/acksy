@@ -1,0 +1,36 @@
+{
+  "event": "notification.updated",
+  "delivery_id": "01DELIVERY",
+  "timestamp": "2026-11-09T12:00:00Z",
+  "notification": {
+    "id": "01NOTIF",
+    "user_id": "01USER",
+    "message_id": "01MSG",
+    "topic": {
+      "id": "01TOPIC",
+      "name": "ci"
+    },
+    "title": "Deploy \u003cprod\u003e failed",
+    "body": "**api** is down @everyone \u003c!channel\u003e\n\n\u003cscript\u003ealert(1)\u003c/script\u003e ![px](https://evil.example/p.png)",
+    "priority": 5,
+    "tags": [
+      "deploy"
+    ],
+    "click_url": "https://ci.example/run/42",
+    "actions": [
+      {
+        "type": "view",
+        "label": "Logs",
+        "url": "https://ci.example/run/42/logs"
+      }
+    ],
+    "dedup_key": "deploy",
+    "repeat_count": 2,
+    "source": "ntfy",
+    "created_at": "2026-11-09T11:59:00Z",
+    "updated_at": "2026-11-09T11:59:00Z",
+    "body_html": "\u003cp\u003e\u003cstrong\u003eapi\u003c/strong\u003e is down @everyone \u0026lt;!channel\u0026gt;\u003c/p\u003e\n\n",
+    "body_text": "api is down @everyone \u003c!channel\u003e",
+    "url": "https://acksy.example/?n=01NOTIF"
+  }
+}

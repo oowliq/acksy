@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+.impeccable
+.tanstack
+docs
+bin
+data
+**/node_modules
+web/dist
+*.db*
+.env*
+*.md

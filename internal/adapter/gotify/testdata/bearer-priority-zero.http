@@ -1,0 +1,5 @@
+POST /gotify/message
+Authorization: Bearer ack_bearer
+Content-Type: application/json
+
+{"message":"quiet","priority":0}
