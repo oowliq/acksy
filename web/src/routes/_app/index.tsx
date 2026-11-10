@@ -270,7 +270,7 @@ function InboxPage() {
   )
 
   return (
-    <div className="grid h-full min-h-0 md:grid-cols-[minmax(340px,520px)_1fr]">
+    <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[minmax(340px,520px)_1fr]">
       {/* List */}
       <section
         aria-label={`${heading} notifications`}
