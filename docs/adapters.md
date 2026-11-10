@@ -1,4 +1,6 @@
-# Адаптеры ntfy и gotify
+# Входящие адаптеры
+
+## HTTP-адаптеры ntfy и gotify
 
 Адаптеры принимают publish-API [ntfy](https://docs.ntfy.sh/publish/) и [gotify](https://gotify.net/docs/pushmsg). Существующим скриптам достаточно сменить базовый URL и токен. Адаптеры только входящие: подписаться на поток в формате ntfy или gotify нельзя, читать уведомления нужно через API Acksy (инвариант 6).
 
@@ -101,7 +103,31 @@
 Golden-тесты (`internal/adapter/*/testdata/*.http` → `*.golden`) построены на запросах из документации ntfy и gotify. После намеренного изменения разбора golden-файлы перегенерируют и **просматривают** diff:
 
 ```bash
-go test ./internal/adapter/... -update
+go test ./internal/adapter/ntfy ./internal/adapter/gotify -update
 ```
 
 Сквозные сценарии (публикация, обновление, clear, удаление, права токенов, формат ошибок) лежат в `internal/httpapi/adapters_test.go`.
+
+## SMTP
+
+Активируйте SMTP по инструкции в [README](../README.md#уведомления-по-smtp). Клиент подключается напрямую с TLS и проверкой сертификата сервера. В поле пароля SMTP AUTH укажите API-токен с правом `notifications:publish`. Имя пользователя произвольное. Домен получателей может отличаться от DNS-имени сервера.
+
+Для проверки замените адреса примера и выполните команду. На запрос пароля введите API-токен.
+
+```sh
+curl --url smtps://smtp.example.org:465 --user acksy \
+  --mail-from alerts@example.org --mail-rcpt backups@notify.example.org \
+  --crlf --upload-file - <<'MAIL'
+From: alerts@example.org
+To: backups@notify.example.org
+Subject: Backup completed
+
+Snapshot saved successfully.
+MAIL
+```
+
+Топик задаёт адрес из команды SMTP `RCPT TO`. Одна транзакция принимает одного получателя. Заголовки письма `To` и `From` не определяют топик и права. Acksy проверяет права на публикацию, ограничения токена и общий лимит отправки. Клиент передаёт письмо командой `DATA`. При обрыве до завершающей строки с точкой публикация отменяется. Успешный ответ после этой строки означает, что уведомление записано. Расширение `CHUNKING` отключено: используйте `DATA` для всех писем.
+
+Источник уведомления — `smtp`. Поддерживаются обычный текст и MIME-письма с частью `text/plain` в UTF-8 или US-ASCII, включая base64 и quoted-printable. Берётся первая текстовая часть без имени файла. Вложения пропускаются. Письмо только с HTML отклоняется. Максимальный размер письма вместе с заголовками и вложениями — 256 КиБ, декодированный текст ограничен общим лимитом уведомлений в 64 КиБ.
+
+В OPNsense Monit откройте **Services → Monit → Settings**. В **General Settings** укажите **Mail Server** (например, `smtp.example.org`), **Mail Server Port** `465`, **Username** `monit` и API-токен в **Password**. Включите **Secure Connection** и **Verify SSL Certificates**. В **Alert Settings** добавьте получателя `opnsense@notify.example.org`, выберите события и примените настройки. [Справка OPNsense](https://docs.opnsense.org/manual/monit.html)

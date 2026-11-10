@@ -87,7 +87,7 @@ function ServerForm({ view }: { view: ServerSettingsView }) {
         {view.updated_at && <> Last saved {fullTime(view.updated_at)}.</>}
       </p>
 
-      <SettingsSection title="Integrations" description="Publish endpoints compatible with other notification servers.">
+      <SettingsSection title="Integrations" description="Choose how clients can publish notifications.">
         <Checkbox
           label="ntfy"
           hint={
@@ -107,6 +107,12 @@ function ServerForm({ view }: { view: ServerSettingsView }) {
           }
           checked={d.gotify}
           onCheckedChange={(gotify) => set({ gotify })}
+        />
+        <Checkbox
+          label="SMTP"
+          hint="Accept email addressed to topics. Requires an SMTP listener configured at startup."
+          checked={d.smtp}
+          onCheckedChange={(smtp) => set({ smtp })}
         />
       </SettingsSection>
 

@@ -1,0 +1,57 @@
+services:
+  traefik:
+    image: traefik:v3.7.17@sha256:f4bb143d1135a579b630ed491e17ec50f6f7c9c6a30585ff3d385471d2a86f5a
+    container_name: traefik
+    restart: always
+    networks: [apps]
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=${COMPOSE_PROJECT_NAME}_apps
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.cf.acme.email=${ACME_EMAIL:?Set ACME_EMAIL}
+      - --certificatesresolvers.cf.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.cf.acme.dnschallenge=true
+      - --certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cf.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.cf.acme.dnschallenge.delayBeforeCheck=15s
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - traefik_data:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CF_DNS_API_TOKEN: ${CF_TOKEN:?Set CF_TOKEN}
+      CF_ZONE_API_TOKEN: ${CF_TOKEN:?Set CF_TOKEN}
+
+  acksy:
+    image: ghcr.io/oowliq/acksy:0.0.2
+    restart: unless-stopped
+    stop_grace_period: 20s
+    networks: [apps]
+    environment:
+      ACKSY_BASE_URL: https://acksy.owlab.tech
+      ACKSY_ADMIN_USERNAME: ${ACKSY_ADMIN_USERNAME:-}
+      ACKSY_ADMIN_PASSWORD: ${ACKSY_ADMIN_PASSWORD:-}
+    volumes:
+      - acksy_data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${COMPOSE_PROJECT_NAME}_apps
+      - traefik.http.routers.acksy.rule=Host(`acksy.owlab.tech`)
+      - traefik.http.routers.acksy.entrypoints=websecure
+      - traefik.http.routers.acksy.tls=true
+      - traefik.http.routers.acksy.tls.certresolver=cf
+      - traefik.http.services.acksy.loadbalancer.server.port=8080
+      - traefik.http.services.acksy.loadbalancer.healthcheck.path=/readyz
+
+volumes:
+  traefik_data: {}
+  acksy_data: {}
+
+networks:
+  apps: {}

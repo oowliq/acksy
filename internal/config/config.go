@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -33,8 +34,37 @@ type Config struct {
 	Admin AdminConfig `yaml:"admin"`
 	// Push optionally pins the Web Push keys.
 	Push PushConfig `yaml:"push"`
+	SMTP SMTPConfig `yaml:"smtp"`
 	// Obsolete lists environment variables that are set but no longer read.
 	Obsolete []string `yaml:"-"`
+}
+
+// SMTPConfig binds the optional implicit-TLS submission listener.
+type SMTPConfig struct {
+	Listen   string `yaml:"listen"`
+	Domain   string `yaml:"domain"`
+	CertFile string `yaml:"cert_file"`
+	KeyFile  string `yaml:"key_file"`
+}
+
+var dnsLabel = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+
+func (s SMTPConfig) validate() error {
+	if s.Listen == "" {
+		return nil
+	}
+	if s.KeyFile == "" || s.CertFile == "" {
+		return errors.New("smtp.cert_file and smtp.key_file are required with smtp.listen")
+	}
+	if len(s.Domain) > 253 {
+		return errors.New("smtp.domain exceeds 253 bytes")
+	}
+	for _, label := range strings.Split(s.Domain, ".") {
+		if !dnsLabel.MatchString(label) {
+			return errors.New("smtp.domain must be a DNS hostname")
+		}
+	}
+	return nil
 }
 
 // PushConfig pins the VAPID keys (RFC 8292). Without them Acksy generates
@@ -115,6 +145,10 @@ type lookupFunc func(string) (string, bool)
 func applyEnv(cfg *Config, lookup lookupFunc) error {
 	str := map[string]*string{
 		"ACKSY_LISTEN":         &cfg.Listen,
+		"ACKSY_SMTP_LISTEN":    &cfg.SMTP.Listen,
+		"ACKSY_SMTP_DOMAIN":    &cfg.SMTP.Domain,
+		"ACKSY_SMTP_CERT_FILE": &cfg.SMTP.CertFile,
+		"ACKSY_SMTP_KEY_FILE":  &cfg.SMTP.KeyFile,
 		"ACKSY_BASE_URL":       &cfg.BaseURL,
 		"ACKSY_DATABASE_URL":   &cfg.DatabaseURL,
 		"ACKSY_REDIS_URL":      &cfg.RedisURL,
@@ -157,6 +191,9 @@ func applyEnv(cfg *Config, lookup lookupFunc) error {
 // Validate reports configuration errors.
 func (c Config) Validate() error {
 	var errs []error
+	if err := c.SMTP.validate(); err != nil {
+		errs = append(errs, err)
+	}
 	if c.Listen == "" {
 		errs = append(errs, errors.New("listen must not be empty"))
 	}

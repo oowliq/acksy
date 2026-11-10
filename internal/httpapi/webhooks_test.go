@@ -110,7 +110,7 @@ func TestRunActionAPI(t *testing.T) {
 	seedUsers(t, svc)
 	root := login(t, h, "root", "password123")
 	rec := root.do(http.MethodPost, "/api/v1/notifications", map[string]any{"body": "gate", "actions": []map[string]any{
-		{"type": "http", "label": "Open", "url": "https://ha.lan/api/open?key=K3Y", "headers": map[string]string{"Authorization": "Bearer S3CRET"}, "clear": true},
+		{"type": "http", "label": "Open", "url": "https://ha.lan/api/open?key=private-query-value", "headers": map[string]string{"Authorization": "Bearer S3CRET"}, "clear": true},
 	}})
 	expect(t, rec, http.StatusCreated)
 	id := decode[struct {
@@ -118,7 +118,7 @@ func TestRunActionAPI(t *testing.T) {
 	}](t, rec).NotificationID
 
 	rec = root.do(http.MethodGet, "/api/v1/notifications/"+id, nil)
-	if body := rec.Body.String(); strings.Contains(body, "S3CRET") || strings.Contains(body, "K3Y") ||
+	if body := rec.Body.String(); strings.Contains(body, "S3CRET") || strings.Contains(body, "private-query-value") ||
 		!strings.Contains(body, `"url":"https://ha.lan/api/open"`) || !strings.Contains(body, `"method":"POST"`) {
 		t.Fatalf("notification JSON: %s", body)
 	}

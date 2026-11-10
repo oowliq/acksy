@@ -38,3 +38,6 @@ web/dist/*
 !/.impeccable/design.json
 !/.impeccable/surfaces/
 .tanstack/
+
+# Local security audit
+/SECURITY-AUDIT.local.md

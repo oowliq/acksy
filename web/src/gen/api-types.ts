@@ -294,12 +294,18 @@ export type User = {
 
 export type ServerSettings = {
   /**
-   * @description Publish-compatible endpoints `/ntfy/…` and `/gotify/message` (404 when off).
+   * @description Incoming notification protocols. Disabled HTTP adapters return 404.
    * @type object
    */
   adapters: {
     ntfy: boolean
     gotify: boolean
+    /**
+     * @description Accept email on the configured SMTP listener. Omitting this field in a replacement disables SMTP.
+     * @default false
+     * @type boolean | undefined
+     */
+    smtp?: boolean
   }
   /**
    * @description Publishes per minute (bursts of the same size); 0 disables a limit.
@@ -804,7 +810,7 @@ export type Notification = {
   dedup_key?: string
   repeat_count: number
   /**
-   * @description Ingest adapter (acksy, ntfy, gotify).
+   * @description Ingest adapter (acksy, ntfy, gotify, smtp).
    * @type string
    */
   source: string

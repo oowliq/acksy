@@ -1,6 +1,6 @@
 // Package adaptertest runs golden tests for ingest adapters: every
 // testdata/*.http request is parsed and the result compared with the
-// matching .golden JSON file. Regenerate with `go test ./internal/adapter/... -update`.
+// matching .golden JSON file. Regenerate with `go test ./internal/adapter/ntfy ./internal/adapter/gotify -update`.
 //
 // A .http file is a request line ("POST /ntfy/alerts?x=1"), header lines, a
 // blank line and the body (the rest of the file, without its final newline).

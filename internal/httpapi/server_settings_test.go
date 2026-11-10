@@ -35,6 +35,9 @@ func TestServerSettingsAPI(t *testing.T) {
 	if body := rec.Body.String(); !strings.Contains(body, `"updated_at":null`) || !strings.Contains(body, `"session_days":30`) {
 		t.Fatalf("defaults: %s", body)
 	}
+	if !strings.Contains(rec.Body.String(), `"smtp":false`) {
+		t.Fatalf("SMTP enabled or missing by default: %s", rec.Body.String())
+	}
 	expect(t, bob.do(http.MethodGet, "/api/v1/settings/server", nil), http.StatusForbidden)
 	admin := &client{t: t, h: h, token: tokenFor(t, svc, "root", []string{"admin"})}
 	expect(t, admin.do(http.MethodGet, "/api/v1/settings/server", nil), http.StatusForbidden)
@@ -58,6 +61,15 @@ func TestServerSettingsAPI(t *testing.T) {
 	expect(t, put, http.StatusOK)
 	if body := put.Body.String(); strings.Contains(body, `"updated_at":null`) || !strings.Contains(body, `"ntfy":false`) {
 		t.Fatalf("saved: %s", body)
+	}
+
+	if svc.Settings(t.Context()).Adapters.Enabled("smtp") {
+		t.Fatal("legacy PUT enabled SMTP")
+	}
+	s["adapters"] = map[string]any{"ntfy": false, "gotify": true, "smtp": true}
+	expect(t, root.do(http.MethodPut, "/api/v1/settings/server", s), http.StatusOK)
+	if !svc.Settings(t.Context()).Adapters.Enabled("smtp") {
+		t.Fatal("admin could not enable SMTP")
 	}
 
 	// Effective at once, without a restart.

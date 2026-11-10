@@ -20,7 +20,7 @@ internal/
     migrations/{sqlite,postgres}/  # goose-миграции (различаются только типами)
     *.go                           # интерфейс Store + реализация на портируемом SQL (sqlx)
   broker/               # интерфейс Broker; memory/, redis/
-  adapter/              # ingest-адаптеры: ntfy/, gotify/, registry, adaptertest/ (golden-раннер)
+  adapter/              # ingest-адаптеры: ntfy/, gotify/, smtp/, HTTP registry, adaptertest/ (golden-раннер)
   delivery/             # webpush/, webhook/ (service.Notifier, воркеры запускает app), action/ (HTTP-кнопки)
   auth/                 # сессии, OIDC, API-токены, проверка scope-ов
   markdown/             # goldmark + bluemonday: HTML и plain-text превью для push и вебхуков
@@ -37,7 +37,7 @@ docs/                   # ADR (docs/adr/NNNN-*.md), adapters.md
 
 - `domain` не импортирует ничего из `internal/` и не делает I/O.
 - В `service` нет SQL, HTTP и конкретных реализаций брокера.
-- Адаптеры только разбирают запрос и превращают его в `adapter.IncomingMessage`. Авторизация, dedup и запись в базу происходят в `service.Publish`.
+- HTTP-адаптеры разбирают запрос в `adapter.IncomingMessage`. SMTP-адаптер разбирает письмо в `domain.Message`. Проверка прав публикации, dedup и запись в базу происходят в `service.Publish`.
 - Проверка scope-ов делается в сервисном слое, а не только в HTTP-middleware: тогда она одинаково срабатывает для всех адаптеров.
 - Хендлеры тонкие: декодировать запрос, вызвать сервис, закодировать ответ.
 
@@ -121,12 +121,14 @@ make docker            # Docker-образ
 - Все ответы идут с `nosniff`, `X-Frame-Options: DENY` и CSP (`internal/httpapi/headers.go`). У SPA скрипты разрешены только со своего origin, inline-скрипты `index.html` — по хешу, который считается при старте. Новый inline-скрипт или внешний ресурс требует правки CSP.
 - `dedup_key` действует в пределах топика (или среди уведомлений без топика): публикация в один топик не может перезаписать уведомление получателя в другом.
 
-## Как добавить адаптер
+SMTP принимает подключения на отдельном TLS-порту в `internal/app`. Адрес, домен и PEM-файлы задаются через `ACKSY_SMTP_LISTEN`, `ACKSY_SMTP_DOMAIN`, `ACKSY_SMTP_CERT_FILE` и `ACKSY_SMTP_KEY_FILE`. Приём публикаций включается в Settings → Server. SMTP-сессии проверяют API-токены через `service.AuthenticateToken` и публикуют через `service.Publish` ([ADR 0009](docs/adr/0009-smtp-ingest.md)).
+
+## Как добавить HTTP-адаптер
 
 1. Создать `internal/adapter/<name>/` с реализацией интерфейса `adapter.Adapter` (маршруты и разбор запроса в `IncomingMessage`).
 2. Зарегистрировать адаптер в `adapter.NewRegistry` в `internal/app` и добавить флаг включения в `domain.AdapterSettings` (Settings → Server), в OpenAPI и на страницу настроек. Адаптер монтируется под своим `Prefix()` вне `/api/v1` и принимает только API-токены.
 3. Описать маппинг полей (приоритет, теги, actions, markdown) в `docs/adapters.md`.
-4. Добавить golden-тесты на реальные запросы клиентов: `testdata/*.http` → `*.golden`, общий раннер `internal/adapter/adaptertest`. После намеренного изменения разбора выполнить `go test ./internal/adapter/... -update` и просмотреть diff golden-файлов.
+4. Добавить golden-тесты на реальные запросы клиентов: `testdata/*.http` → `*.golden`, общий раннер `internal/adapter/adaptertest`. После намеренного изменения разбора выполнить `go test ./internal/adapter/ntfy ./internal/adapter/gotify -update` и просмотреть diff golden-файлов.
 5. Убедиться, что адаптер не трогает store и broker напрямую.
 
 ## Definition of Done

@@ -42,6 +42,7 @@ type ServerSettings struct {
 type AdapterSettings struct {
 	NTFY   bool `json:"ntfy"`
 	Gotify bool `json:"gotify"`
+	SMTP   bool `json:"smtp"`
 }
 
 // Enabled reports whether the adapter with this name is on.
@@ -51,6 +52,8 @@ func (a AdapterSettings) Enabled(name string) bool {
 		return a.NTFY
 	case "gotify":
 		return a.Gotify
+	case "smtp":
+		return a.SMTP
 	}
 	return false
 }

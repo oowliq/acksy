@@ -3,7 +3,7 @@ import type { ServerSettingsView } from './api'
 import { serverSettingsDirty, serverSettingsDraft, serverSettingsErrors, serverSettingsInput } from './server-settings'
 
 const view: ServerSettingsView = {
-  adapters: { ntfy: true, gotify: false },
+  adapters: { ntfy: true, gotify: false, smtp: true },
   publish_limit: { per_token: 60, per_user: 0 },
   push: { enabled: true, subject: '' },
   webhooks: { enabled: true, allow_private: false, failed_retention_days: 7 },

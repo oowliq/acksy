@@ -10,6 +10,7 @@ export type PriorityKey = (typeof priorities)[number]
 export interface ServerSettingsDraft {
   ntfy: boolean
   gotify: boolean
+  smtp: boolean
   perToken: string
   perUser: string
   pushEnabled: boolean
@@ -44,6 +45,7 @@ export function serverSettingsDraft(v: ServerSettings): ServerSettingsDraft {
   return {
     ntfy: v.adapters.ntfy,
     gotify: v.adapters.gotify,
+    smtp: v.adapters.smtp ?? false,
     perToken: String(v.publish_limit.per_token),
     perUser: String(v.publish_limit.per_user),
     pushEnabled: v.push.enabled,
@@ -74,7 +76,7 @@ export function serverSettingsInput(d: ServerSettingsDraft): ServerSettings {
     if (d.readDaysByPriority[p].trim() !== '') byPriority[p] = int(d.readDaysByPriority[p])
   }
   return {
-    adapters: { ntfy: d.ntfy, gotify: d.gotify },
+    adapters: { ntfy: d.ntfy, gotify: d.gotify, smtp: d.smtp },
     publish_limit: { per_token: int(d.perToken), per_user: int(d.perUser) },
     push: { enabled: d.pushEnabled, subject: d.pushSubject.trim() },
     webhooks: {

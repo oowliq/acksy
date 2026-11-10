@@ -156,3 +156,29 @@ func TestObsoleteEnvReported(t *testing.T) {
 		t.Fatalf("clean env: %q %v", clean.Obsolete, err)
 	}
 }
+
+func TestSMTPConfig(t *testing.T) {
+	cfg := Default()
+	err := applyEnv(&cfg, mapLookup(map[string]string{
+		"ACKSY_SMTP_LISTEN": ":2465", "ACKSY_SMTP_DOMAIN": "notify.example.org",
+		"ACKSY_SMTP_CERT_FILE": "cert.pem", "ACKSY_SMTP_KEY_FILE": "key.pem",
+	}))
+	if err != nil || cfg.SMTP.Listen != ":2465" || cfg.SMTP.Domain != "notify.example.org" ||
+		cfg.SMTP.CertFile != "cert.pem" || cfg.SMTP.KeyFile != "key.pem" {
+		t.Fatalf("SMTP environment: %+v, %v", cfg.SMTP, err)
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for _, domain := range []string{"", "other@domain", "a..b", "-bad.example", "bad\r\nhost"} {
+		cfg.SMTP.Domain = domain
+		if cfg.Validate() == nil {
+			t.Errorf("accepted SMTP domain %q", domain)
+		}
+	}
+	cfg.SMTP.Domain = "notify.example.org"
+	cfg.SMTP.KeyFile = ""
+	if cfg.Validate() == nil {
+		t.Fatal("accepted missing TLS key")
+	}
+}

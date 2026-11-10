@@ -67,7 +67,7 @@ export const NotificationRow = memo(function NotificationRow({
     >
       <label
         className={cn(
-          'grid h-5 place-items-center opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100',
+          'relative z-10 grid h-5 place-items-center opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100',
           selecting ? 'opacity-100' : '[@media(hover:none)]:invisible',
           checked && 'opacity-100',
         )}

@@ -11,7 +11,7 @@ afterEach(() => {
 })
 
 const view: ServerSettingsView = {
-  adapters: { ntfy: true, gotify: true },
+  adapters: { ntfy: true, gotify: true, smtp: false },
   publish_limit: { per_token: 60, per_user: 0 },
   push: { enabled: true, subject: '' },
   webhooks: { enabled: true, allow_private: false, failed_retention_days: 7 },
@@ -49,12 +49,14 @@ describe('ServerPage', () => {
     const spy = vi.spyOn(api, 'saveServerSettings').mockResolvedValue({ ...view, updated_at: '2026-11-09T10:00:00Z' })
     setup()
     fireEvent.change(within(section('Publishing limits')).getByLabelText('Per user'), { target: { value: '120' } })
+    fireEvent.click(within(section('Integrations')).getByRole('checkbox', { name: 'SMTP' }))
     fireEvent.change(screen.getByLabelText('P1'), { target: { value: '3' } })
     fireEvent.click(save())
     await vi.waitFor(() => expect(spy).toHaveBeenCalled())
     const { updated_at: _, ...settings } = view
     expect(spy.mock.calls[0]?.[0]).toEqual({
       ...settings,
+      adapters: { ...view.adapters, smtp: true },
       publish_limit: { per_token: 60, per_user: 120 },
       retention: { ...view.retention, read_days_by_priority: { '1': 3, '5': 90 } },
     })

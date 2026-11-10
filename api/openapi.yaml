@@ -300,7 +300,7 @@ paths:
         updates it in place, bumps `repeat_count` and resets its read state.
 
         Publishing is rate limited per API token and per user (per minute,
-        set in the server settings); the ntfy and gotify adapters share the
+        set in the server settings); the ntfy, gotify and SMTP adapters share the
         same budget.
       requestBody:
         required: true
@@ -1627,10 +1627,14 @@ components:
           type: object
           additionalProperties: false
           required: [ntfy, gotify]
-          description: Publish-compatible endpoints `/ntfy/…` and `/gotify/message` (404 when off).
+          description: Incoming notification protocols. Disabled HTTP adapters return 404.
           properties:
             ntfy: { type: boolean }
             gotify: { type: boolean }
+            smtp:
+              type: boolean
+              default: false
+              description: Accept email on the configured SMTP listener. Omitting this field in a replacement disables SMTP.
         publish_limit:
           type: object
           additionalProperties: false
@@ -1957,7 +1961,7 @@ components:
         repeat_count: { type: integer }
         source:
           type: string
-          description: Ingest adapter (acksy, ntfy, gotify).
+          description: Ingest adapter (acksy, ntfy, gotify, smtp).
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         expires_at: { type: string, format: date-time }
