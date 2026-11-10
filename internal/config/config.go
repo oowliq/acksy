@@ -39,8 +39,11 @@ type Config struct {
 	Obsolete []string `yaml:"-"`
 }
 
-// SMTPConfig binds the optional implicit-TLS submission listener.
+const SMTPModePlain = "plain"
+
+// SMTPConfig binds the optional SMTP submission listener.
 type SMTPConfig struct {
+	Mode     string `yaml:"mode"`
 	Listen   string `yaml:"listen"`
 	Domain   string `yaml:"domain"`
 	CertFile string `yaml:"cert_file"`
@@ -53,7 +56,10 @@ func (s SMTPConfig) validate() error {
 	if s.Listen == "" {
 		return nil
 	}
-	if s.KeyFile == "" || s.CertFile == "" {
+	if s.Mode != "" && s.Mode != "tls" && s.Mode != SMTPModePlain {
+		return errors.New("smtp.mode must be tls or plain")
+	}
+	if s.Mode != SMTPModePlain && (s.KeyFile == "" || s.CertFile == "") {
 		return errors.New("smtp.cert_file and smtp.key_file are required with smtp.listen")
 	}
 	if len(s.Domain) > 253 {
@@ -145,6 +151,7 @@ type lookupFunc func(string) (string, bool)
 func applyEnv(cfg *Config, lookup lookupFunc) error {
 	str := map[string]*string{
 		"ACKSY_LISTEN":         &cfg.Listen,
+		"ACKSY_SMTP_MODE":      &cfg.SMTP.Mode,
 		"ACKSY_SMTP_LISTEN":    &cfg.SMTP.Listen,
 		"ACKSY_SMTP_DOMAIN":    &cfg.SMTP.Domain,
 		"ACKSY_SMTP_CERT_FILE": &cfg.SMTP.CertFile,

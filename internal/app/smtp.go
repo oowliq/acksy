@@ -37,20 +37,27 @@ func (l smtpListener) Accept() (net.Conn, error) {
 	return &smtpConn{Conn: c, stop: stop}, nil
 }
 
-func listenSMTP(ctx context.Context, cfg config.SMTPConfig) (net.Listener, *tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("load SMTP certificate: %w", err)
+func listenSMTP(ctx context.Context, cfg config.SMTPConfig) (net.Listener, error) {
+	var tlsConfig *tls.Config
+	if cfg.Mode != config.SMTPModePlain {
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("load SMTP certificate: %w", err)
+		}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}
 	}
 	var lc net.ListenConfig
 	ln, err := lc.Listen(ctx, "tcp", cfg.Listen)
 	if err != nil {
-		return nil, nil, fmt.Errorf("listen SMTP %s: %w", cfg.Listen, err)
+		return nil, fmt.Errorf("listen SMTP %s: %w", cfg.Listen, err)
 	}
-	return ln, &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}, nil
+	if tlsConfig != nil {
+		ln = tls.NewListener(ln, tlsConfig)
+	}
+	return ln, nil
 }
 
-func (a *App) serveSMTP(ctx context.Context, ln net.Listener, tlsConfig *tls.Config) error {
+func (a *App) serveSMTP(ctx context.Context, ln net.Listener) error {
 	// Allow in-flight publications to finish during graceful shutdown.
 	base := context.WithoutCancel(ctx)
 	connections, closeClients := context.WithCancel(base)
@@ -58,7 +65,7 @@ func (a *App) serveSMTP(ctx context.Context, ln net.Listener, tlsConfig *tls.Con
 	server := smtp.NewServer(connections, a.svc, a.cfg.SMTP.Domain)
 	done := make(chan error, 1)
 	go func() {
-		done <- server.ServeTLS(smtpListener{ln, connections}, tlsConfig)
+		done <- server.Serve(smtpListener{ln, connections})
 	}()
 	var serveErr error
 	select {

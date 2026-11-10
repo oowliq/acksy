@@ -59,6 +59,11 @@ func wantStatus(t *testing.T, err error, code int) {
 }
 
 func TestSMTPSubmission(t *testing.T) {
+	t.Run("tls", func(t *testing.T) { testSMTPSubmission(t, true) })
+	t.Run("plain", func(t *testing.T) { testSMTPSubmission(t, false) })
+}
+
+func testSMTPSubmission(t *testing.T, secure bool) {
 	ctx := t.Context()
 	db, err := store.Open(ctx, "sqlite://:memory:")
 	check(t, err)
@@ -83,9 +88,9 @@ func TestSMTPSubmission(t *testing.T) {
 	}
 	setEnabled(true)
 	const host = "notify.example.org"
-	open := serveTestSMTP(t, svc, host)
+	open := serveTestSMTP(t, svc, host, secure)
 	dial := func() *gosmtp.Client {
-		conn, _ := open()
+		conn, _, _ := open()
 		c := gosmtp.NewClient(conn)
 		c.CommandTimeout = 3 * time.Second
 		c.SubmissionTimeout = 3 * time.Second
@@ -132,7 +137,7 @@ func TestSMTPSubmission(t *testing.T) {
 		t.Run(transfer, func(t *testing.T) {
 			before, err := svc.ListNotifications(ctx, p, service.ListQuery{})
 			check(t, err)
-			conn, closed := open()
+			conn, raw, closed := open()
 			wire := textproto.NewConn(conn)
 			defer wire.Close()
 			response := func(code int) {
@@ -193,7 +198,7 @@ func TestSMTPSubmission(t *testing.T) {
 			}
 			check(t, err)
 			// Cut the transport without exchanging TLS close alerts on the unbuffered pipe.
-			_ = conn.NetConn().Close()
+			_ = raw.Close()
 			select {
 			case <-closed:
 			case <-time.After(5 * time.Second):
@@ -240,7 +245,7 @@ func (c *observedConn) Close() error {
 	return err
 }
 
-func serveTestSMTP(t *testing.T, svc *service.Service, host string) func() (*tls.Conn, <-chan struct{}) {
+func serveTestSMTP(t *testing.T, svc *service.Service, host string, secure bool) func() (net.Conn, net.Conn, <-chan struct{}) {
 	t.Helper()
 	pub, key, err := ed25519.GenerateKey(rand.Reader)
 	check(t, err)
@@ -254,19 +259,26 @@ func serveTestSMTP(t *testing.T, svc *service.Service, host string) func() (*tls
 	listener := &pipeListener{conns: make(chan net.Conn), done: make(chan struct{})}
 	server := NewServer(t.Context(), svc, host)
 	served := make(chan error, 1)
+	var transport net.Listener = listener
+	if secure {
+		transport = tls.NewListener(listener, &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{{Certificate: [][]byte{der}, PrivateKey: key}}})
+	}
 	go func() {
-		served <- server.ServeTLS(listener, &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{{Certificate: [][]byte{der}, PrivateKey: key}}})
+		served <- server.Serve(transport)
 	}()
 	t.Cleanup(func() {
 		check(t, server.Shutdown(context.Background()))
 		check(t, <-served)
 	})
-	return func() (*tls.Conn, <-chan struct{}) {
+	return func() (net.Conn, net.Conn, <-chan struct{}) {
 		s, c := net.Pipe()
 		closed := make(chan struct{})
 		listener.conns <- &observedConn{Conn: s, done: closed}
-		conn := tls.Client(c, &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots, ServerName: host})
+		conn := c
+		if secure {
+			conn = tls.Client(c, &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots, ServerName: host})
+		}
 		check(t, conn.SetDeadline(time.Now().Add(5*time.Second)))
-		return conn, closed
+		return conn, c, closed
 	}
 }

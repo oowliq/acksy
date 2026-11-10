@@ -20,7 +20,7 @@ func TestSMTPShutdownInterruptsIdleHandshake(t *testing.T) {
 	l := &pipeListener{conns: make(chan net.Conn), done: make(chan struct{})}
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)
-	go func() { done <- a.serveSMTP(ctx, l, &tls.Config{MinVersion: tls.VersionTLS12}) }()
+	go func() { done <- a.serveSMTP(ctx, tls.NewListener(l, &tls.Config{MinVersion: tls.VersionTLS12})) }()
 	client, err := l.dial(ctx, "", "")
 	if err != nil {
 		t.Fatal(err)

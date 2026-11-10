@@ -27,7 +27,7 @@ Self-hosted сервис уведомлений. Задача та же, что 
 ```
              ┌──────────── adapters (ingest) ────────────┐
  HTTP  ───▶  │  acksy  │  ntfy-compat  │  gotify-compat  │
- SMTP/TLS ▶  │  smtp                                     │
+ SMTP     ▶  │  smtp                                     │
              └────────────────────┬──────────────────────┘
                                   ▼  IncomingMessage
                        service.Publish
@@ -118,9 +118,22 @@ curl "http://localhost:8080/gotify/message?token=$ACKSY_TOKEN" \
 
 Приложение может отправить письмо прямо в топик Acksy. Например, письмо на `backups@notify.example.org` попадёт в топик `backups`. Тема письма станет заголовком, текст — телом уведомления.
 
-1. Задайте `ACKSY_SMTP_LISTEN=:2465`, `ACKSY_SMTP_DOMAIN=notify.example.org`, пути к сертификату и ключу и перезапустите Acksy. Для Docker опубликуйте порт, например `465:2465`, и примонтируйте файлы сертификата и ключа с правом чтения для пользователя контейнера.
+1. Для TLS задайте `ACKSY_SMTP_LISTEN=:2465`, `ACKSY_SMTP_DOMAIN=notify.example.org`, пути к сертификату и ключу и перезапустите Acksy. Для Docker опубликуйте порт, например `465:2465`, и примонтируйте файлы сертификата и ключа с правом чтения для пользователя контейнера.
 2. Включите **SMTP** в **Settings → Server → Integrations**. Создайте API-токен с правом `notifications:publish` для нужного топика.
-3. В приложении укажите имя сервера из сертификата, опубликованный порт, TLS с начала соединения (SMTPS), любой логин и API-токен в поле пароля. Укажите одного получателя в настроенном домене.
+3. Для TLS в приложении укажите имя сервера из сертификата, опубликованный порт, TLS с начала соединения (SMTPS), любой логин и API-токен в поле пароля. Укажите одного получателя в настроенном домене.
+
+Для доверенной LAN можно включить SMTP без сертификатов. Пример настроек сервиса в Docker Compose (замените IP на LAN-адрес хоста):
+
+```yaml
+environment:
+  ACKSY_SMTP_MODE: plain
+  ACKSY_SMTP_LISTEN: ":2525"
+  ACKSY_SMTP_DOMAIN: acksy.home.arpa
+ports:
+  - "192.168.1.20:2525:2525"
+```
+
+Включите интеграцию и создайте токен, как в шаге 2. В клиенте укажите LAN-адрес, порт `2525`, соединение без шифрования и API-токен в поле пароля. Токен и письмо передаются открытым текстом, поэтому ограничьте доступ к этому порту доверенной сетью.
 
 [Форматы писем и пример проверки через curl](docs/adapters.md#smtp)
 
@@ -132,8 +145,9 @@ curl "http://localhost:8080/gotify/message?token=$ACKSY_TOKEN" \
 |---|---|---|
 | `ACKSY_LISTEN` | `:8080` | Адрес HTTP-сервера |
 | `ACKSY_SMTP_LISTEN` | — | Адрес SMTP-сервера. Пустое значение отключает порт |
+| `ACKSY_SMTP_MODE` | `tls` | `tls` для TLS с начала соединения, `plain` для SMTP без шифрования |
 | `ACKSY_SMTP_DOMAIN` | — | Домен адресов получателей, обязателен при включённом порте |
-| `ACKSY_SMTP_CERT_FILE` / `ACKSY_SMTP_KEY_FILE` | — | PEM-файлы цепочки сертификатов и закрытого ключа SMTP |
+| `ACKSY_SMTP_CERT_FILE` / `ACKSY_SMTP_KEY_FILE` | — | PEM-файлы цепочки сертификатов и закрытого ключа для режима `tls` |
 | `ACKSY_DATABASE_URL` | `sqlite://data/acksy.db` (в Docker `sqlite:///data/acksy.db`) | `sqlite://…` или `postgres://…` |
 | `ACKSY_REDIS_URL` | — | Если задан, используется Redis-брокер, иначе in-memory |
 | `ACKSY_BASE_URL` | — | Публичный URL: OIDC redirect, ссылки в вебхуках, VAPID subject по умолчанию |

@@ -182,3 +182,20 @@ func TestSMTPConfig(t *testing.T) {
 		t.Fatal("accepted missing TLS key")
 	}
 }
+
+func TestSMTPPlainMode(t *testing.T) {
+	cfg := Default()
+	err := applyEnv(&cfg, mapLookup(map[string]string{"ACKSY_SMTP_MODE": "plain", "ACKSY_SMTP_LISTEN": ":2525", "ACKSY_SMTP_DOMAIN": "acksy.home.arpa"}))
+	if err != nil || cfg.SMTP.Mode != "plain" {
+		t.Fatalf("SMTP mode: %q, %v", cfg.SMTP.Mode, err)
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for _, mode := range []string{"", "tls", "typo"} {
+		cfg.SMTP.Mode = mode
+		if cfg.Validate() == nil {
+			t.Errorf("accepted mode %q without certificates", mode)
+		}
+	}
+}

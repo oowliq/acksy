@@ -3,7 +3,6 @@ package smtp
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -13,7 +12,6 @@ import (
 // verifies the complete length of a BDAT LAST chunk before accepting the message.
 type submissionListener struct {
 	net.Listener
-	config *tls.Config
 }
 
 func (l submissionListener) Accept() (net.Conn, error) {
@@ -26,12 +24,11 @@ func (l submissionListener) Accept() (net.Conn, error) {
 		_ = conn.Close()
 		return nil, err
 	}
-	secure := tls.Server(conn, l.config)
-	return &submissionConn{Conn: secure, reader: bufio.NewReader(secure)}, nil
+	return &submissionConn{Conn: conn, reader: bufio.NewReader(conn)}, nil
 }
 
 type submissionConn struct {
-	*tls.Conn
+	net.Conn
 	reader  *bufio.Reader
 	pending []byte
 	data    bool

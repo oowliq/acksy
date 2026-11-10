@@ -153,7 +153,7 @@ func (a *App) Run(ctx context.Context) error {
 	if a.cfg.SMTP.Listen == "" {
 		return a.Serve(ctx, ln)
 	}
-	smtpLn, tlsConfig, err := listenSMTP(ctx, a.cfg.SMTP)
+	smtpLn, err := listenSMTP(ctx, a.cfg.SMTP)
 	if err != nil {
 		_ = ln.Close()
 		return err
@@ -163,7 +163,7 @@ func (a *App) Run(ctx context.Context) error {
 	defer stop()
 	smtpDone := make(chan error, 1)
 	go func() {
-		err := a.serveSMTP(ctx, smtpLn, tlsConfig)
+		err := a.serveSMTP(ctx, smtpLn)
 		stop()
 		smtpDone <- err
 	}()

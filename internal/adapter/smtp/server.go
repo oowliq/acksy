@@ -2,7 +2,6 @@ package smtp
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"io"
 	"log"
@@ -17,11 +16,11 @@ import (
 	"github.com/oowliq/acksy/internal/service"
 )
 
-// Server accepts submissions over implicit TLS only.
+// Server accepts submissions on the listener provided by the application.
 type Server struct{ smtp *gosmtp.Server }
 
-func (s *Server) ServeTLS(l net.Listener, config *tls.Config) error {
-	return s.smtp.Serve(submissionListener{Listener: l, config: config})
+func (s *Server) Serve(l net.Listener) error {
+	return s.smtp.Serve(submissionListener{Listener: l})
 }
 
 func (s *Server) Shutdown(ctx context.Context) error { return s.smtp.Shutdown(ctx) }
@@ -32,8 +31,8 @@ func NewServer(ctx context.Context, svc *service.Service, domainName string) *Se
 	}))
 	server.Domain = domainName
 	server.MaxRecipients = 1
-	// TLS is established by submissionListener. go-smtp cannot identify
-	// the wrapped *tls.Conn itself. ServeTLS is the only serving entry point.
+	// The application selects implicit TLS or explicit plaintext. Both
+	// transports require SMTP AUTH through the same token checks.
 	server.AllowInsecureAuth = true
 	// parseMessage enforces the inclusive byte limit, including the case
 	// where the terminator follows a message of exactly maxMessageBytes.

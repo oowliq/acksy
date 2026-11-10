@@ -121,7 +121,7 @@ make docker            # Docker-образ
 - Все ответы идут с `nosniff`, `X-Frame-Options: DENY` и CSP (`internal/httpapi/headers.go`). У SPA скрипты разрешены только со своего origin, inline-скрипты `index.html` — по хешу, который считается при старте. Новый inline-скрипт или внешний ресурс требует правки CSP.
 - `dedup_key` действует в пределах топика (или среди уведомлений без топика): публикация в один топик не может перезаписать уведомление получателя в другом.
 
-SMTP принимает подключения на отдельном TLS-порту в `internal/app`. Адрес, домен и PEM-файлы задаются через `ACKSY_SMTP_LISTEN`, `ACKSY_SMTP_DOMAIN`, `ACKSY_SMTP_CERT_FILE` и `ACKSY_SMTP_KEY_FILE`. Приём публикаций включается в Settings → Server. SMTP-сессии проверяют API-токены через `service.AuthenticateToken` и публикуют через `service.Publish` ([ADR 0009](docs/adr/0009-smtp-ingest.md)).
+SMTP принимает подключения на отдельном порту в `internal/app`. По умолчанию используется TLS. Режим `ACKSY_SMTP_MODE=plain` разрешает SMTP без шифрования в доверенной сети. Аутентификация API-токеном обязательна в обоих режимах. Адрес, домен и PEM-файлы задаются через `ACKSY_SMTP_LISTEN`, `ACKSY_SMTP_DOMAIN`, `ACKSY_SMTP_CERT_FILE` и `ACKSY_SMTP_KEY_FILE`. Приём публикаций включается в Settings → Server. SMTP-сессии проверяют API-токены через `service.AuthenticateToken` и публикуют через `service.Publish` ([ADR 0009](docs/adr/0009-smtp-ingest.md)).
 
 ## Как добавить HTTP-адаптер
 
