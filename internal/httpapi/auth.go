@@ -76,7 +76,7 @@ func (a *api) setSessionCookie(w http.ResponseWriter, r *http.Request, secret st
 	// Secure follows the deployment (HTTPS or not); HttpOnly and SameSite are fixed.
 	http.SetCookie(w, &http.Cookie{ //nolint:gosec // see above
 		Name: SessionCookie, Value: secret, Path: "/", HttpOnly: true, Secure: a.secure(r),
-		SameSite: http.SameSiteLaxMode, MaxAge: int(a.opts.SessionTTL.Seconds()),
+		SameSite: http.SameSiteLaxMode, MaxAge: int(a.svc.SessionTTL(r.Context()).Seconds()),
 	})
 }
 

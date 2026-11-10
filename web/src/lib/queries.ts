@@ -17,6 +17,7 @@ import {
   type Notification,
   type NotificationPage,
   type OIDCSettingsInput,
+  type ServerSettings,
   type StatePatch,
   type UpdateTopicRequest,
   type UpdateUserRequest,
@@ -397,3 +398,21 @@ export const useTestOIDC = () =>
   useMutation({
     mutationFn: (input: OIDCSettingsInput) => api.testOIDCSettings(input),
   })
+
+// --- Server (admin) ---------------------------------------------------------
+
+export const serverSettingsQuery = queryOptions({
+  queryKey: queryKeys.serverSettings,
+  queryFn: api.serverSettings,
+  retry: false,
+})
+
+export function useSaveServerSettings() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ServerSettings) => api.saveServerSettings(input),
+    onSuccess: (view) => qc.setQueryData(queryKeys.serverSettings, view),
+    // Turning Web Push on or off changes what the Push page offers.
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.push.config }),
+  })
+}

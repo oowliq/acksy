@@ -23,16 +23,25 @@ type PushSender interface {
 	SendTest(ctx context.Context, sub domain.PushSubscription) error
 }
 
-// AddNotifier registers n for committed notifications. Call during wiring,
-// before serving requests.
-func (s *Service) AddNotifier(n Notifier) { s.notifiers = append(s.notifiers, n) }
+// gatedNotifier is a notifier with the server-settings switch it obeys.
+type gatedNotifier struct {
+	n  Notifier
+	on func(domain.ServerSettings) bool // nil: always
+}
 
-// SetPushSender enables test pushes.
+// AddNotifier registers n for committed notifications; on (optional) decides
+// from the server settings whether n gets them. Call during wiring, before
+// serving requests.
+func (s *Service) AddNotifier(n Notifier, on func(domain.ServerSettings) bool) {
+	s.notifiers = append(s.notifiers, gatedNotifier{n: n, on: on})
+}
+
+// SetPushSender wires Web Push; the server settings switch it on and off.
 func (s *Service) SetPushSender(p PushSender) { s.pushSender = p }
 
 // notify hands committed notifications that may alert the user to the
 // notifiers: unread, not snoozed, not expired.
-func (s *Service) notify(ns []domain.Notification) {
+func (s *Service) notify(ctx context.Context, ns []domain.Notification) {
 	if len(s.notifiers) == 0 || len(ns) == 0 {
 		return
 	}
@@ -49,10 +58,15 @@ func (s *Service) notify(ns []domain.Notification) {
 	if len(out) == 0 {
 		return
 	}
+	settings := s.Settings(ctx)
 	for _, nf := range s.notifiers {
-		nf.Notify(out)
+		if nf.on == nil || nf.on(settings) {
+			nf.n.Notify(out)
+		}
 	}
 }
+
+var errPushOff = domain.Conflict("Web Push is turned off on this server")
 
 // vapidSetting stores generated keys as one JSON value, so concurrent first
 // starts of several instances cannot end up with mismatched halves.
@@ -107,6 +121,9 @@ type SubscribePushInput struct {
 func (s *Service) SubscribePush(ctx context.Context, p *auth.Principal, in SubscribePushInput) (*domain.PushSubscription, error) {
 	if err := requireSession(p, "push subscriptions"); err != nil {
 		return nil, err
+	}
+	if !s.PushEnabled(ctx) {
+		return nil, errPushOff
 	}
 	if in.MinPriority == 0 {
 		in.MinPriority = domain.PriorityDefault
@@ -191,8 +208,8 @@ func (s *Service) TestPushSubscription(ctx context.Context, p *auth.Principal, i
 	if err := requireSession(p, "push subscriptions"); err != nil {
 		return err
 	}
-	if s.pushSender == nil {
-		return domain.Conflict("Web Push is not enabled on this server")
+	if s.pushSender == nil || !s.PushEnabled(ctx) {
+		return errPushOff
 	}
 	sub, err := s.store.GetPushSubscription(ctx, p.User.ID, id)
 	if err != nil {

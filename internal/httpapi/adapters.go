@@ -29,6 +29,10 @@ func (a *api) mountAdapters(r chi.Router, adapters []adapter.Adapter) {
 func (a *api) adapterHandler(ad adapter.Adapter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		if !a.svc.Settings(ctx).Adapters.Enabled(ad.Name()) {
+			ad.WriteError(w, r, http.StatusNotFound, "this adapter is turned off on this server")
+			return
+		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxAdapterBody)
 		fail := func(err error) {
 			he := statusFor(err)

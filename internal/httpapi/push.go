@@ -9,13 +9,15 @@ import (
 	"github.com/oowliq/acksy/internal/service"
 )
 
-var errPushDisabled = domain.Conflict("Web Push is disabled on this server")
+var errPushNotWired = domain.Conflict("Web Push is not available on this server")
 
-func (a *api) pushConfig(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"enabled":    a.opts.PushPublicKey != "",
-		"public_key": a.opts.PushPublicKey,
-	})
+func (a *api) pushConfig(w http.ResponseWriter, r *http.Request) {
+	enabled := a.opts.PushPublicKey != "" && a.svc.PushEnabled(r.Context())
+	key := ""
+	if enabled {
+		key = a.opts.PushPublicKey
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"enabled": enabled, "public_key": key})
 }
 
 func (a *api) listPushSubscriptions(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +31,7 @@ func (a *api) listPushSubscriptions(w http.ResponseWriter, r *http.Request) {
 
 func (a *api) createPushSubscription(w http.ResponseWriter, r *http.Request) {
 	if a.opts.PushPublicKey == "" {
-		respondErr(w, r, a.log, errPushDisabled)
+		respondErr(w, r, a.log, errPushNotWired)
 		return
 	}
 	// The shape of the browser's PushSubscription.toJSON(), plus settings.

@@ -18,7 +18,7 @@ type fakeRunner struct {
 	started chan struct{}
 }
 
-func (f *fakeRunner) Run(_ context.Context, a domain.Action) ActionResult {
+func (f *fakeRunner) Run(_ context.Context, a domain.Action, _ bool) ActionResult {
 	f.mu.Lock()
 	f.got = append(f.got, a)
 	f.mu.Unlock()

@@ -183,8 +183,8 @@ func (s *Service) TestWebhook(ctx context.Context, p *auth.Principal, id string)
 	if err != nil {
 		return nil, err
 	}
-	if s.webhookSender == nil {
-		return nil, domain.Conflict("webhooks are not enabled on this server")
+	if s.webhookSender == nil || !s.Settings(ctx).Webhooks.Enabled {
+		return nil, domain.Conflict("webhooks are turned off on this server")
 	}
 	res := s.webhookSender.SendTest(ctx, *w)
 	return &res, nil
@@ -193,12 +193,21 @@ func (s *Service) TestWebhook(ctx context.Context, p *auth.Principal, id string)
 // webhookQueue collects deliveries inside a publish transaction.
 type webhookQueue struct {
 	byUser map[string][]domain.Webhook
+	// off skips queueing: webhooks are switched off in the server settings.
+	off bool
+}
+
+func newWebhookQueue(enabled bool) *webhookQueue {
+	return &webhookQueue{byUser: map[string][]domain.Webhook{}, off: !enabled}
 }
 
 // enqueueWebhooks queues a delivery for every enabled webhook of the
 // recipient that matches the stored notification. It runs in the publish
 // transaction, so deliveries exist exactly when the notification does.
 func (s *Service) enqueueWebhooks(ctx context.Context, q store.Querier, wq *webhookQueue, n *domain.Notification, typ domain.EventType) error {
+	if wq.off {
+		return nil
+	}
 	hooks, ok := wq.byUser[n.UserID]
 	if !ok {
 		var err error

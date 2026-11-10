@@ -25,7 +25,7 @@ func (s *Service) Publish(ctx context.Context, p *auth.Principal, m domain.Messa
 	if err := p.Require(domain.ScopePublish); err != nil {
 		return nil, err
 	}
-	if err := s.checkPublishRate(p); err != nil {
+	if err := s.checkPublishRate(ctx, p); err != nil {
 		return nil, err
 	}
 	now := s.now()
@@ -42,9 +42,10 @@ func (s *Service) Publish(ctx context.Context, p *auth.Principal, m domain.Messa
 
 	res := &PublishResult{MessageID: s.newID()}
 	var delivered []domain.Notification
+	hooksOn := s.Settings(ctx).Webhooks.Enabled // read before the transaction
 	err := s.tx(ctx, func(q store.Querier, em *emitter) error {
 		delivered = delivered[:0]
-		wq := &webhookQueue{byUser: map[string][]domain.Webhook{}}
+		wq := newWebhookQueue(hooksOn)
 		var topic *domain.Topic
 		recipients := []string{p.User.ID}
 		if tokenTopicID != "" {
@@ -104,7 +105,7 @@ func (s *Service) Publish(ctx context.Context, p *auth.Principal, m domain.Messa
 	if err != nil {
 		return nil, err
 	}
-	s.notify(delivered) // after commit, like the broker fan-out
+	s.notify(ctx, delivered) // after commit, like the broker fan-out
 	return res, nil
 }
 
@@ -135,19 +136,20 @@ func (s *Service) storeNotification(ctx context.Context, q store.Querier, em *em
 
 // checkPublishRate enforces the per-token and per-user publish limits. It
 // lives in the service so every ingest path (REST, ntfy, gotify) shares it.
-func (s *Service) checkPublishRate(p *auth.Principal) error {
+func (s *Service) checkPublishRate(ctx context.Context, p *auth.Principal) error {
 	if p.User == nil || p.User.ID == "" {
 		return nil // system principal (CLI, bootstrap)
 	}
+	lim := s.limiters(ctx)
 	now := s.now()
 	if p.Token != nil {
-		if ok, wait := s.tokenLimit.Allow(p.Token.ID, now); !ok {
+		if ok, wait := lim.token.Allow(p.Token.ID, now); !ok {
 			return &domain.RateLimitError{Msg: "publish rate limit exceeded for this token", RetryAfter: wait}
 		}
 	}
-	if ok, wait := s.userLimit.Allow(p.User.ID, now); !ok {
+	if ok, wait := lim.user.Allow(p.User.ID, now); !ok {
 		if p.Token != nil {
-			s.tokenLimit.Refund(p.Token.ID, now) // the request did not go through
+			lim.token.Refund(p.Token.ID, now) // the request did not go through
 		}
 		return &domain.RateLimitError{Msg: "publish rate limit exceeded for this user", RetryAfter: wait}
 	}
@@ -182,7 +184,7 @@ func (s *Service) ApplyToKey(ctx context.Context, p *auth.Principal, topicRef, d
 	if err := p.Require(domain.ScopePublish); err != nil {
 		return nil, err
 	}
-	if err := s.checkPublishRate(p); err != nil {
+	if err := s.checkPublishRate(ctx, p); err != nil {
 		return nil, err
 	}
 	if action != domain.BulkDelete && action != domain.BulkRead {

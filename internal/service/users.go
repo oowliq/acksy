@@ -281,6 +281,7 @@ func (s *Service) ChangePassword(ctx context.Context, p *auth.Principal, current
 	if !p.IsSession() {
 		return domain.Forbidden("password changes require a login session")
 	}
+	ttl := s.SessionTTL(ctx) // read before the transaction
 	return s.store.InTx(ctx, func(q store.Querier) error {
 		u, err := q.GetUser(ctx, p.User.ID)
 		if err != nil {
@@ -308,7 +309,7 @@ func (s *Service) ChangePassword(ctx context.Context, p *auth.Principal, current
 		// Keep the session that made the change.
 		now := s.now()
 		return q.CreateSession(ctx, &domain.Session{
-			ID: p.SessionID, UserID: u.ID, CreatedAt: now, ExpiresAt: now.Add(s.opts.SessionTTL), LastSeenAt: now,
+			ID: p.SessionID, UserID: u.ID, CreatedAt: now, ExpiresAt: now.Add(ttl), LastSeenAt: now,
 		})
 	})
 }

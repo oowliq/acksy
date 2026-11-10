@@ -22,7 +22,6 @@ import (
 
 // Options tune service behaviour.
 type Options struct {
-	SessionTTL time.Duration
 	// StreamCheckInterval is how often realtime streams re-validate
 	// credentials and poll the database for missed events (default 30s).
 	StreamCheckInterval time.Duration
@@ -32,21 +31,9 @@ type Options struct {
 	// OIDCRedirectURL is the callback registered at the provider (from
 	// ACKSY_BASE_URL); OIDC can't be turned on without it.
 	OIDCRedirectURL string
-	// SignInTTL bounds how stale another instance's sign-in changes can be
-	// here (default DefaultSignInTTL).
+	// SignInTTL bounds how stale another instance's sign-in and server
+	// settings changes can be here (default DefaultSignInTTL).
 	SignInTTL time.Duration
-	// PublishLimit throttles publishing; zero values disable a limit.
-	PublishLimit PublishLimit
-	// Retention deletes old notifications (ApplyRetention).
-	Retention domain.RetentionPolicy
-}
-
-// PublishLimit caps publish requests per minute, per API token and per user
-// (summed over all of the user's tokens and sessions). Each limit also allows
-// a burst of that many requests at once.
-type PublishLimit struct {
-	PerToken int
-	PerUser  int
 }
 
 // Service is the application core.
@@ -59,10 +46,9 @@ type Service struct {
 	now   func() time.Time
 	newID func() string
 
-	tokenLimit *auth.RateLimiter
-	userLimit  *auth.RateLimiter
+	publishLimit atomic.Pointer[publishLimiters]
 
-	notifiers     []Notifier
+	notifiers     []gatedNotifier
 	pushSender    PushSender
 	webhookSender WebhookSender
 
@@ -72,13 +58,13 @@ type Service struct {
 
 	signIn   atomic.Pointer[SignInSnapshot]
 	signInMu sync.Mutex
+
+	server   atomic.Pointer[serverSnapshot]
+	serverMu sync.Mutex
 }
 
 // New builds a Service.
 func New(st store.Store, b broker.Broker, log *slog.Logger, opts Options) *Service {
-	if opts.SessionTTL <= 0 {
-		opts.SessionTTL = 30 * 24 * time.Hour
-	}
 	if opts.SignInTTL <= 0 {
 		opts.SignInTTL = DefaultSignInTTL
 	}
@@ -86,9 +72,6 @@ func New(st store.Store, b broker.Broker, log *slog.Logger, opts Options) *Servi
 		store: st, broker: b, log: log, opts: opts,
 		now:   func() time.Time { return time.Now().UTC().Truncate(time.Millisecond) },
 		newID: func() string { return ulid.Make().String() },
-
-		tokenLimit: auth.NewRateLimiter(opts.PublishLimit.PerToken, opts.PublishLimit.PerToken),
-		userLimit:  auth.NewRateLimiter(opts.PublishLimit.PerUser, opts.PublishLimit.PerUser),
 
 		actionLimit: auth.NewRateLimiter(actionLimitPerMinute, actionLimitPerMinute/3),
 	}

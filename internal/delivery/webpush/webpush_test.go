@@ -96,7 +96,7 @@ func newDispatcher(t *testing.T, ft *fakeTargets) *Dispatcher {
 	}
 	// The push "service" listens on loopback, so use a plain client here;
 	// the default netguard client is covered by its own tests.
-	return New(ft, Config{Keys: keys, Subject: "https://acksy.example", Client: http.DefaultClient},
+	return New(ft, Config{Keys: keys, Subject: func(context.Context) string { return "https://acksy.example" }, Client: http.DefaultClient},
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 

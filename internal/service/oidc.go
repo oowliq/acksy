@@ -33,6 +33,7 @@ func (s *Service) LoginOIDC(ctx context.Context, c auth.OIDCClaims, userAgent st
 	// Read the settings before the transaction: a reload inside it would wait
 	// for a connection the transaction holds (SQLite has only one).
 	settings := s.SignIn(ctx).Settings
+	ttl := s.SessionTTL(ctx)
 	var (
 		secret string
 		user   *domain.User
@@ -45,7 +46,7 @@ func (s *Service) LoginOIDC(ctx context.Context, c auth.OIDCClaims, userAgent st
 			if err != nil {
 				return err
 			}
-			secret, err = s.newSession(ctx, q, u.ID, userAgent)
+			secret, err = s.newSession(ctx, q, u.ID, userAgent, ttl)
 			user = u
 			return err
 		})

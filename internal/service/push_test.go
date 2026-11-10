@@ -104,7 +104,7 @@ func TestPublishNotifiesAfterCommit(t *testing.T) {
 	ctx := context.Background()
 	e := newEnv(t)
 	rec := &recordingNotifier{}
-	e.svc.AddNotifier(rec)
+	e.svc.AddNotifier(rec, nil)
 	alice, bob := e.user("alice", domain.RoleUser), e.user("bob", domain.RoleUser)
 	tp := must(e.svc.CreateTopic(ctx, alice, CreateTopicInput{Name: "ci"}))
 	e.share(alice, tp.ID, "bob")
@@ -144,10 +144,10 @@ func TestPublishNotifiesAfterCommit(t *testing.T) {
 func TestNotifyFiltersQuietNotifications(t *testing.T) {
 	e := newEnv(t)
 	rec := &recordingNotifier{}
-	e.svc.AddNotifier(rec)
+	e.svc.AddNotifier(rec, nil)
 	now := e.clock
 	past, future := now.Add(-time.Minute), now.Add(time.Hour)
-	e.svc.notify([]domain.Notification{
+	e.svc.notify(context.Background(), []domain.Notification{
 		{ID: "fresh"},
 		{ID: "read", ReadAt: &past},
 		{ID: "archived", ArchivedAt: &past},

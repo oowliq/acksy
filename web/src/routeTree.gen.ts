@@ -16,6 +16,7 @@ import { Route as AppSettingsRouteRouteImport } from './routes/_app/settings/rou
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppSettingsPushRouteImport } from './routes/_app/settings/push'
+import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsSignInRouteImport } from './routes/_app/settings/sign-in'
 import { Route as AppSettingsTokensRouteImport } from './routes/_app/settings/tokens'
 import { Route as AppSettingsUsersRouteRouteImport } from './routes/_app/settings/users/route'
@@ -58,6 +59,11 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
 const AppSettingsPushRoute = AppSettingsPushRouteImport.update({
   id: '/push',
   path: '/push',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
+const AppSettingsServerRoute = AppSettingsServerRouteImport.update({
+  id: '/server',
+  path: '/server',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
 const AppSettingsSignInRoute = AppSettingsSignInRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AppSettingsUsersRouteRouteWithChildren
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/push': typeof AppSettingsPushRoute
+  '/settings/server': typeof AppSettingsServerRoute
   '/settings/sign-in': typeof AppSettingsSignInRoute
   '/settings/tokens': typeof AppSettingsTokensRoute
   '/settings/': typeof AppSettingsIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/push': typeof AppSettingsPushRoute
+  '/settings/server': typeof AppSettingsServerRoute
   '/settings/sign-in': typeof AppSettingsSignInRoute
   '/settings/tokens': typeof AppSettingsTokensRoute
   '/settings': typeof AppSettingsIndexRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_app/settings/users': typeof AppSettingsUsersRouteRouteWithChildren
   '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/push': typeof AppSettingsPushRoute
+  '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/sign-in': typeof AppSettingsSignInRoute
   '/_app/settings/tokens': typeof AppSettingsTokensRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/account'
     | '/settings/push'
+    | '/settings/server'
     | '/settings/sign-in'
     | '/settings/tokens'
     | '/settings/'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings/account'
     | '/settings/push'
+    | '/settings/server'
     | '/settings/sign-in'
     | '/settings/tokens'
     | '/settings'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/_app/settings/users'
     | '/_app/settings/account'
     | '/_app/settings/push'
+    | '/_app/settings/server'
     | '/_app/settings/sign-in'
     | '/_app/settings/tokens'
     | '/_app/settings/'
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       path: '/push'
       fullPath: '/settings/push'
       preLoaderRoute: typeof AppSettingsPushRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
+    '/_app/settings/server': {
+      id: '/_app/settings/server'
+      path: '/server'
+      fullPath: '/settings/server'
+      preLoaderRoute: typeof AppSettingsServerRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
     '/_app/settings/sign-in': {
@@ -352,6 +371,7 @@ interface AppSettingsRouteRouteChildren {
   AppSettingsUsersRouteRoute: typeof AppSettingsUsersRouteRouteWithChildren
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsPushRoute: typeof AppSettingsPushRoute
+  AppSettingsServerRoute: typeof AppSettingsServerRoute
   AppSettingsSignInRoute: typeof AppSettingsSignInRoute
   AppSettingsTokensRoute: typeof AppSettingsTokensRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
@@ -365,6 +385,7 @@ const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsUsersRouteRoute: AppSettingsUsersRouteRouteWithChildren,
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsPushRoute: AppSettingsPushRoute,
+  AppSettingsServerRoute: AppSettingsServerRoute,
   AppSettingsSignInRoute: AppSettingsSignInRoute,
   AppSettingsTokensRoute: AppSettingsTokensRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,

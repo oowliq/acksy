@@ -37,7 +37,7 @@ func (s *Service) Login(ctx context.Context, username, password, userAgent strin
 		return "", nil, errBadCredentials
 	}
 
-	secret, err := s.newSession(ctx, s.store, u.ID, userAgent)
+	secret, err := s.newSession(ctx, s.store, u.ID, userAgent, s.SessionTTL(ctx))
 	if err != nil {
 		return "", nil, err
 	}
@@ -48,13 +48,16 @@ func (s *Service) Login(ctx context.Context, username, password, userAgent strin
 var ErrPasswordLoginDisabled = &domain.Error{Kind: domain.KindForbidden, Msg: "password login is disabled; sign in with SSO"}
 
 // newSession stores a login session for userID and returns the cookie secret.
-func (s *Service) newSession(ctx context.Context, q store.Querier, userID, userAgent string) (string, error) {
+//
+// ttl comes from the caller: inside a transaction the settings must not be
+// re-read (SQLite has a single connection, held by the transaction).
+func (s *Service) newSession(ctx context.Context, q store.Querier, userID, userAgent string, ttl time.Duration) (string, error) {
 	secret, hash := auth.NewSessionSecret()
 	now := s.now()
 	if len(userAgent) > 256 {
 		userAgent = userAgent[:256]
 	}
-	sess := &domain.Session{ID: hash, UserID: userID, UserAgent: userAgent, CreatedAt: now, ExpiresAt: now.Add(s.opts.SessionTTL), LastSeenAt: now}
+	sess := &domain.Session{ID: hash, UserID: userID, UserAgent: userAgent, CreatedAt: now, ExpiresAt: now.Add(ttl), LastSeenAt: now}
 	if err := q.CreateSession(ctx, sess); err != nil {
 		return "", err
 	}
@@ -91,7 +94,7 @@ func (s *Service) AuthenticateSession(ctx context.Context, secret string) (*auth
 		return nil, err
 	}
 	if now.Sub(sess.LastSeenAt) >= sessionTouchInterval {
-		if err := s.store.TouchSession(ctx, sess.ID, now, now.Add(s.opts.SessionTTL)); err != nil {
+		if err := s.store.TouchSession(ctx, sess.ID, now, now.Add(s.SessionTTL(ctx))); err != nil {
 			s.log.Warn("touch session", "err", err)
 		}
 	}

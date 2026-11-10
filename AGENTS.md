@@ -12,7 +12,7 @@
 ```
 cmd/acksy/              # точка входа: serve, migrate, user/token admin CLI
 internal/
-  config/               # загрузка env + YAML, валидация (OIDC из env — только разовый импорт)
+  config/               # стартовый конфиг из env + YAML (остальные настройки в БД, ADR 0008)
   app/                  # wiring зависимостей, жизненный цикл
   domain/               # сущности и чистые бизнес-правила (dedup, group, retention, scopes)
   service/              # use-cases: Publish, ReadState, Topics, Tokens, Users
@@ -115,6 +115,7 @@ make docker            # Docker-образ
 - Исходящие вебхуки подписываются HMAC, есть защита от SSRF (запрет приватных сетей по умолчанию).
 - Любые запросы на URL, присланные пользователем (push endpoint, вебхуки, HTTP-действия), делаются только клиентом из `internal/netguard`. Ошибки таких запросов логируются через `netguard.Describe`, без URL.
 - Секреты HTTP-действий (заголовки, тело, query в URL) не попадают ни в какой JSON-вывод: `domain.Action.MarshalJSON` их скрывает, в БД они пишутся только через `domain.ActionsForStorage`.
+- В env только то, что нужно для старта (адрес, БД, Redis, `BASE_URL`, cookie, логи, бутстрап админа, VAPID-ключи). Остальные runtime-настройки живут в базе (`instance_settings`, ключ `server`, ADR 0008), меняются только админом из login-сессии и читаются через снимок `Service.Settings`. Внутри транзакции настройки не перечитываются: значения берутся до `InTx`.
 - Настройки OIDC живут в базе (`instance_settings`, ключ `oidc`, ADR 0006). Секрет клиента только принимается API: в ответах есть лишь `client_secret_set`. Запросы к issuer идут через `internal/netguard` (частные адреса разрешены: URL задаёт админ). Менять настройки входа можно только админу из login-сессии.
 - Cookie сессий: `HttpOnly`, `Secure`, `SameSite=Lax`. Для cookie-аутентификации включена CSRF-защита.
 - Все ответы идут с `nosniff`, `X-Frame-Options: DENY` и CSP (`internal/httpapi/headers.go`). У SPA скрипты разрешены только со своего origin, inline-скрипты `index.html` — по хешу, который считается при старте. Новый inline-скрипт или внешний ресурс требует правки CSP.
@@ -123,7 +124,7 @@ make docker            # Docker-образ
 ## Как добавить адаптер
 
 1. Создать `internal/adapter/<name>/` с реализацией интерфейса `adapter.Adapter` (маршруты и разбор запроса в `IncomingMessage`).
-2. Зарегистрировать адаптер в `adapter.NewRegistry` в `internal/app` и добавить флаг включения в `config.AdaptersConfig`. Адаптер монтируется под своим `Prefix()` вне `/api/v1` и принимает только API-токены.
+2. Зарегистрировать адаптер в `adapter.NewRegistry` в `internal/app` и добавить флаг включения в `domain.AdapterSettings` (Settings → Server), в OpenAPI и на страницу настроек. Адаптер монтируется под своим `Prefix()` вне `/api/v1` и принимает только API-токены.
 3. Описать маппинг полей (приоритет, теги, actions, markdown) в `docs/adapters.md`.
 4. Добавить golden-тесты на реальные запросы клиентов: `testdata/*.http` → `*.golden`, общий раннер `internal/adapter/adaptertest`. После намеренного изменения разбора выполнить `go test ./internal/adapter/... -update` и просмотреть diff golden-файлов.
 5. Убедиться, что адаптер не трогает store и broker напрямую.

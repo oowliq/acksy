@@ -3,11 +3,10 @@ package httpapi
 import (
 	"net/http"
 	"testing"
-	"time"
 )
 
 func TestPushSubscriptionsAPI(t *testing.T) {
-	h, svc := newAPIWith(t, Options{SessionTTL: time.Hour, PushPublicKey: "BPublicKey"})
+	h, svc := newAPIWith(t, Options{PushPublicKey: "BPublicKey"})
 	seedUsers(t, svc)
 	root := login(t, h, "root", "password123")
 
@@ -76,6 +75,23 @@ func TestPushDisabled(t *testing.T) {
 	cfg := decode[struct{ Enabled bool }](t, root.do(http.MethodGet, "/api/v1/push/config", nil))
 	if cfg.Enabled {
 		t.Fatal("push reported enabled without a key")
+	}
+	expect(t, root.do(http.MethodPost, "/api/v1/push/subscriptions", map[string]any{
+		"endpoint": "https://push.example/x", "keys": map[string]string{"p256dh": "a", "auth": "b"},
+	}), http.StatusConflict)
+}
+
+func TestPushSwitchedOff(t *testing.T) {
+	h, svc := newAPIWith(t, Options{PushPublicKey: "BPublicKey"})
+	seedUsers(t, svc)
+	putServerSettings(t, h, func(s map[string]any) { s["push"] = map[string]any{"enabled": false, "subject": ""} })
+	root := login(t, h, "root", "password123")
+	cfg := decode[struct {
+		Enabled   bool   `json:"enabled"`
+		PublicKey string `json:"public_key"`
+	}](t, root.do(http.MethodGet, "/api/v1/push/config", nil))
+	if cfg.Enabled || cfg.PublicKey != "" {
+		t.Fatalf("config: %+v", cfg)
 	}
 	expect(t, root.do(http.MethodPost, "/api/v1/push/subscriptions", map[string]any{
 		"endpoint": "https://push.example/x", "keys": map[string]string{"p256dh": "a", "auth": "b"},

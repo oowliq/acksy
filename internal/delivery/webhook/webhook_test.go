@@ -188,7 +188,7 @@ func TestRunWakesOnNotify(t *testing.T) {
 	rcv := newReceiver(t)
 	e.hook(t, rcv.URL+"/ok", domain.WebhookAcksy)
 	w := newWorker(e) // polls hourly: only Notify can wake it in time
-	e.svc.AddNotifier(w)
+	e.svc.AddNotifier(w, nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() { w.Run(ctx); close(done) }()
@@ -218,14 +218,50 @@ func TestSendTestAndPrivateTargets(t *testing.T) {
 	if !res.OK || res.Status != http.StatusNoContent || rcv.got[0].headers.Get("X-Acksy-Event") != "webhook.test" {
 		t.Fatalf("test: %+v", res)
 	}
-	// The default client refuses loopback/private targets unless allowed.
+	// The default clients refuse loopback/private targets unless the server
+	// settings allow them; the switch takes effect without a new worker.
 	guarded := New(e.svc, Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	res = guarded.SendTest(context.Background(), *c.Webhook)
-	if res.OK || !strings.Contains(res.Error, "ACKSY_WEBHOOK_ALLOW_PRIVATE") {
+	if res.OK || !strings.Contains(res.Error, "allow private addresses") {
 		t.Fatalf("private target: %+v", res)
 	}
-	allowed := New(e.svc, Config{AllowPrivate: true}, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if res := allowed.SendTest(context.Background(), *c.Webhook); !res.OK {
+	e.settings(t, func(s *domain.ServerSettings) { s.Webhooks.AllowPrivate = true })
+	if res := guarded.SendTest(context.Background(), *c.Webhook); !res.OK {
 		t.Fatalf("allow private: %+v", res)
+	}
+}
+
+func TestDisabledWebhooksWait(t *testing.T) {
+	e := newEnv(t)
+	rcv := newReceiver(t)
+	c := e.hook(t, rcv.URL+"/ok", domain.WebhookAcksy)
+	e.publish(t, "queued")
+	e.settings(t, func(s *domain.ServerSettings) { s.Webhooks.Enabled = false })
+	newWorker(e).drain(context.Background())
+	if rcv.count() != 0 || len(e.deliveries(t, c.Webhook.ID)) != 1 {
+		t.Fatalf("switched off: sent=%d queued=%d", rcv.count(), len(e.deliveries(t, c.Webhook.ID)))
+	}
+	e.publish(t, "not queued while off")
+	if n := len(e.deliveries(t, c.Webhook.ID)); n != 1 {
+		t.Fatalf("queued while off: %d", n)
+	}
+	e.settings(t, func(s *domain.ServerSettings) { s.Webhooks.Enabled = true })
+	newWorker(e).drain(context.Background())
+	if rcv.count() != 1 {
+		t.Fatalf("back on: sent=%d", rcv.count())
+	}
+}
+
+// settings changes the server settings as an admin in a login session.
+func (e *env) settings(t *testing.T, mutate func(*domain.ServerSettings)) {
+	t.Helper()
+	admin := &auth.Principal{User: &domain.User{ID: "admin", Role: domain.RoleAdmin}, SessionID: "s", Scopes: domain.Scopes{domain.ScopeAdmin}}
+	s, _, err := e.svc.ServerSettings(context.Background(), admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutate(&s)
+	if _, _, err := e.svc.SaveServerSettings(context.Background(), admin, s); err != nil {
+		t.Fatal(err)
 	}
 }

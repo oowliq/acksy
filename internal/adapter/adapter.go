@@ -65,23 +65,18 @@ type Adapter interface {
 	WriteError(w http.ResponseWriter, r *http.Request, status int, msg string)
 }
 
-// Registry holds the enabled adapters.
+// Registry holds the ingest adapters.
 type Registry struct {
 	adapters []Adapter
 }
 
-// NewRegistry returns a registry of the adapters whose name is enabled.
-func NewRegistry(enabled map[string]bool, all ...Adapter) *Registry {
-	r := &Registry{}
-	for _, a := range all {
-		if enabled[a.Name()] {
-			r.adapters = append(r.adapters, a)
-		}
-	}
-	return r
+// NewRegistry returns a registry of the given adapters. All of them are
+// mounted; the server settings switch each on and off at runtime.
+func NewRegistry(all ...Adapter) *Registry {
+	return &Registry{adapters: all}
 }
 
-// All returns the enabled adapters.
+// All returns the adapters.
 func (r *Registry) All() []Adapter {
 	if r == nil {
 		return nil

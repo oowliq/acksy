@@ -39,9 +39,9 @@ type App struct {
 	svc    *service.Service
 	broker broker.Broker
 	server *http.Server
-	push   *webpush.Dispatcher // nil when Web Push is disabled
-	hooks  *webhook.Worker     // nil when webhooks are disabled
-	vapid  string              // public VAPID key served to browsers
+	push   *webpush.Dispatcher
+	hooks  *webhook.Worker
+	vapid  string // public VAPID key served to browsers
 }
 
 // New opens the database, applies migrations, connects the broker and builds
@@ -83,14 +83,12 @@ func New(ctx context.Context, cfg config.Config, log *slog.Logger) (_ *App, err 
 		redirectURL = cfg.OIDCRedirectURL()
 	}
 	a.svc = service.New(store.New(a.db), a.broker, log, service.Options{
-		SessionTTL:      cfg.SessionTTL,
-		PublishLimit:    service.PublishLimit{PerToken: cfg.PublishLimit.PerToken, PerUser: cfg.PublishLimit.PerUser},
-		Retention:       retentionPolicy(cfg.Retention),
 		NewOIDCProvider: oidcProviderFactory(redirectURL),
 		OIDCRedirectURL: redirectURL,
 	})
-	if err := importOIDCFromEnv(ctx, a.svc, cfg.OIDC, log); err != nil {
-		return nil, fmt.Errorf("import oidc settings: %w", err)
+	if len(cfg.Obsolete) > 0 {
+		log.Warn("ignoring environment variables of settings that moved to Settings → Server and Settings → Sign-in",
+			"vars", cfg.Obsolete)
 	}
 	if snap := a.svc.SignIn(ctx); snap.Settings.Active() {
 		log.Info("oidc enabled", "issuer", snap.Settings.Issuer, "redirect_url", redirectURL,
@@ -107,26 +105,21 @@ func New(ctx context.Context, cfg config.Config, log *slog.Logger) (_ *App, err 
 		}
 	}
 
-	if cfg.Push.Enabled {
-		if err := a.setupPush(ctx); err != nil {
-			return nil, err
-		}
+	// Delivery is always wired; the server settings switch each part on and
+	// off at runtime (ADR 0008).
+	if err := a.setupPush(ctx); err != nil {
+		return nil, err
 	}
-	if cfg.Actions.Enabled {
-		a.svc.SetActionRunner(action.New(action.Config{AllowPrivate: cfg.Actions.AllowPrivate}))
-		log.Info("http actions enabled", "allow_private", cfg.Actions.AllowPrivate)
-	}
-	if cfg.Webhooks.Enabled {
-		a.hooks = webhook.New(a.svc, webhook.Config{BaseURL: cfg.BaseURL, AllowPrivate: cfg.Webhooks.AllowPrivate}, log)
-		a.svc.AddNotifier(a.hooks)
-		a.svc.SetWebhookSender(a.hooks)
-		log.Info("webhooks enabled", "allow_private", cfg.Webhooks.AllowPrivate)
-	}
+	a.svc.SetActionRunner(action.New(action.Config{}))
+	a.hooks = webhook.New(a.svc, webhook.Config{BaseURL: cfg.BaseURL}, log)
+	a.svc.AddNotifier(a.hooks, func(s domain.ServerSettings) bool { return s.Webhooks.Enabled })
+	a.svc.SetWebhookSender(a.hooks)
 
-	adapters := adapter.NewRegistry(cfg.Adapters.Enabled(), ntfy.New(), gotify.New()).All()
-	for _, ad := range adapters {
-		log.Info("adapter enabled", "name", ad.Name(), "prefix", ad.Prefix())
-	}
+	adapters := adapter.NewRegistry(ntfy.New(), gotify.New()).All()
+	s := a.svc.Settings(ctx)
+	log.Info("server settings", "ntfy", s.Adapters.NTFY, "gotify", s.Adapters.Gotify, "push", s.Push.Enabled,
+		"webhooks", s.Webhooks.Enabled, "webhooks_allow_private", s.Webhooks.AllowPrivate,
+		"actions", s.Actions.Enabled, "actions_allow_private", s.Actions.AllowPrivate)
 
 	a.server = &http.Server{
 		Addr: cfg.Listen,
@@ -134,7 +127,7 @@ func New(ctx context.Context, cfg config.Config, log *slog.Logger) (_ *App, err 
 			Logger:  log,
 			Service: a.svc,
 			Options: httpapi.Options{
-				SecureCookies: cfg.UseSecureCookies(), SessionTTL: cfg.SessionTTL,
+				SecureCookies: cfg.UseSecureCookies(),
 				PushPublicKey: a.vapid,
 			},
 			Ready:    ready,
@@ -236,28 +229,15 @@ func (a *App) setupPush(ctx context.Context) error {
 	} else if err := keys.Validate(); err != nil {
 		return fmt.Errorf("ACKSY_VAPID_*: %w", err)
 	}
-	subject := a.cfg.PushSubject()
-	if subject == "" {
-		a.log.Warn("web push: no VAPID subject; set ACKSY_VAPID_SUBJECT (https URL or e-mail) or an https ACKSY_BASE_URL, Safari rejects pushes without one")
+	subject := func(ctx context.Context) string { return a.svc.Settings(ctx).PushSubject(a.cfg.BaseURL) }
+	if s := a.svc.Settings(ctx); s.Push.Enabled && subject(ctx) == "" {
+		a.log.Warn("web push: no VAPID subject; set one in Settings → Server (https URL or e-mail) or use an https ACKSY_BASE_URL, Safari rejects pushes without one")
 	}
 	a.push = webpush.New(a.svc, webpush.Config{Keys: keys, Subject: subject}, a.log)
-	a.svc.AddNotifier(a.push)
+	a.svc.AddNotifier(a.push, func(s domain.ServerSettings) bool { return s.Push.Enabled })
 	a.svc.SetPushSender(a.push)
 	a.vapid = keys.Public
-	a.log.Info("web push enabled", "subject", subject)
 	return nil
-}
-
-// retentionPolicy converts the configured retention for the service.
-func retentionPolicy(c config.RetentionConfig) domain.RetentionPolicy {
-	p := domain.RetentionPolicy{
-		ReadTTL: time.Duration(c.ReadTTL), UnreadTTL: time.Duration(c.UnreadTTL), MaxPerUser: c.MaxPerUser,
-		ReadTTLByPriority: make(map[int]time.Duration, len(c.ReadTTLByPriority)),
-	}
-	for prio, d := range c.ReadTTLByPriority {
-		p.ReadTTLByPriority[prio] = time.Duration(d)
-	}
-	return p
 }
 
 // janitor runs periodic housekeeping until ctx is cancelled.
@@ -275,12 +255,13 @@ func (a *App) janitor(ctx context.Context) {
 		} else if res.Deleted > 0 {
 			a.log.Info("notification retention", "deleted", res.Deleted)
 		}
-		if n, err := a.svc.PruneWebhookDeliveries(ctx, a.cfg.Webhooks.FailedRetention); err != nil {
+		settings := a.svc.Settings(ctx)
+		if n, err := a.svc.PruneWebhookDeliveries(ctx, settings.WebhookFailedRetention()); err != nil {
 			a.log.Warn("prune webhook deliveries", "err", err)
 		} else if n > 0 {
 			a.log.Debug("pruned failed webhook deliveries", "count", n)
 		}
-		if n, err := a.svc.PruneEvents(ctx, a.cfg.EventRetention); err != nil {
+		if n, err := a.svc.PruneEvents(ctx, settings.EventRetention()); err != nil {
 			a.log.Warn("prune events", "err", err)
 		} else if n > 0 {
 			a.log.Debug("pruned old events", "count", n)

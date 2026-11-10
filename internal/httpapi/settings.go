@@ -118,3 +118,40 @@ func (a *api) testOIDCSettings(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, result{Error: netguard.Describe(err)})
 	}
 }
+
+// serverSettingsView is domain.ServerSettings plus when it last changed.
+type serverSettingsView struct {
+	domain.ServerSettings
+	UpdatedAt *time.Time `json:"updated_at"`
+}
+
+func serverView(s domain.ServerSettings, at time.Time) serverSettingsView {
+	v := serverSettingsView{ServerSettings: s}
+	if !at.IsZero() {
+		v.UpdatedAt = &at
+	}
+	return v
+}
+
+func (a *api) getServerSettings(w http.ResponseWriter, r *http.Request) {
+	s, at, err := a.svc.ServerSettings(r.Context(), principal(r))
+	if err != nil {
+		respondErr(w, r, a.log, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, serverView(s, at))
+}
+
+func (a *api) putServerSettings(w http.ResponseWriter, r *http.Request) {
+	var in domain.ServerSettings
+	if err := decodeJSON(w, r, &in); err != nil {
+		respondErr(w, r, a.log, err)
+		return
+	}
+	s, at, err := a.svc.SaveServerSettings(r.Context(), principal(r), in)
+	if err != nil {
+		respondErr(w, r, a.log, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, serverView(s, at))
+}

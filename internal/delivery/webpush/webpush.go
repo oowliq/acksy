@@ -39,8 +39,9 @@ type Targets interface {
 // Config tunes the dispatcher.
 type Config struct {
 	Keys auth.VAPIDKeys
-	// Subject is the VAPID "sub": an https URL or an e-mail address.
-	Subject   string
+	// Subject returns the VAPID "sub": an https URL or an e-mail address
+	// (from the server settings). Empty falls back to acksy@localhost.
+	Subject   func(context.Context) string
 	Workers   int           // default 4
 	QueueSize int           // default 1024
 	TTL       time.Duration // how long push services keep undelivered messages (default 24h)
@@ -71,9 +72,6 @@ func New(t Targets, cfg Config, log *slog.Logger) *Dispatcher {
 	}
 	if cfg.Client == nil {
 		cfg.Client = netguard.NewClient(netguard.Options{})
-	}
-	if cfg.Subject == "" {
-		cfg.Subject = "acksy@localhost"
 	}
 	return &Dispatcher{targets: t, cfg: cfg, log: log, queue: make(chan domain.Notification, cfg.QueueSize), now: time.Now}
 }
@@ -161,6 +159,15 @@ func urgencyFor(priority int) wp.Urgency {
 	}
 }
 
+func (d *Dispatcher) subject(ctx context.Context) string {
+	if d.cfg.Subject != nil {
+		if s := d.cfg.Subject(ctx); s != "" {
+			return s
+		}
+	}
+	return "acksy@localhost"
+}
+
 // outcome of one send.
 type outcome int
 
@@ -175,7 +182,7 @@ func (d *Dispatcher) send(ctx context.Context, s domain.PushSubscription, payloa
 	resp, err := wp.SendNotificationWithContext(ctx, payload,
 		&wp.Subscription{Endpoint: s.Endpoint, Keys: wp.Keys{P256dh: s.P256dh, Auth: s.Auth}},
 		&wp.Options{
-			HTTPClient: d.cfg.Client, Subscriber: d.cfg.Subject,
+			HTTPClient: d.cfg.Client, Subscriber: d.subject(ctx),
 			VAPIDPublicKey: d.cfg.Keys.Public, VAPIDPrivateKey: d.cfg.Keys.Private,
 			TTL: o.ttl, Urgency: o.urgency, Topic: o.topic,
 		})

@@ -27,10 +27,10 @@ type Options struct {
 	// SecureCookies forces the Secure cookie flag (set when served over HTTPS
 	// behind a proxy). Requests arriving over TLS always get Secure cookies.
 	SecureCookies bool
-	SessionTTL    time.Duration
 	// KeepAlive is the SSE comment / WebSocket ping interval (default 25s).
 	KeepAlive time.Duration
-	// PushPublicKey is the VAPID public key; empty means Web Push is off.
+	// PushPublicKey is the VAPID public key; empty means Web Push is not
+	// wired. The server settings switch it on and off.
 	PushPublicKey string
 }
 
@@ -46,8 +46,9 @@ type Deps struct {
 	Web fs.FS
 	// OpenAPI is the API specification served at /api/v1/openapi.yaml.
 	OpenAPI []byte
-	// Adapters are the enabled ingest adapters (ntfy, gotify), mounted
-	// outside /api/v1 under their own prefixes.
+	// Adapters are the ingest adapters (ntfy, gotify), mounted outside
+	// /api/v1 under their own prefixes. The server settings switch each on
+	// and off.
 	Adapters []adapter.Adapter
 }
 
@@ -130,6 +131,9 @@ func (a *api) routes(root chi.Router) {
 		r.Get("/me", a.me)
 		r.Patch("/me", a.updateMe)
 		r.Post("/me/password", a.changePassword)
+
+		r.Get("/settings/server", a.getServerSettings)
+		r.Put("/settings/server", a.putServerSettings)
 
 		r.Route("/settings/oidc", func(r chi.Router) {
 			r.Get("/", a.getOIDCSettings)

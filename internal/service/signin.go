@@ -113,9 +113,9 @@ type OIDCSettingsInput struct {
 	ClientSecret *string
 }
 
-// requireSignInAdmin allows admins in a login session only: like token
+// requireSessionAdmin allows admins in a login session only: like token
 // management, a leaked token must not be able to change how people sign in.
-func requireSignInAdmin(p *auth.Principal) error {
+func requireSessionAdmin(p *auth.Principal) error {
 	if err := p.Require(domain.ScopeAdmin); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (s *Service) OIDCRedirectURL() string { return s.opts.OIDCRedirectURL }
 // OIDCSettings returns the stored settings, secret included: callers that
 // answer clients must drop it.
 func (s *Service) OIDCSettings(ctx context.Context, p *auth.Principal) (domain.OIDCSettings, time.Time, error) {
-	if err := requireSignInAdmin(p); err != nil {
+	if err := requireSessionAdmin(p); err != nil {
 		return domain.OIDCSettings{}, time.Time{}, err
 	}
 	return s.storedOIDCSettings(ctx)
@@ -169,7 +169,7 @@ func (s *Service) mergeOIDCInput(ctx context.Context, in OIDCSettingsInput) (dom
 // SaveOIDCSettings validates and stores the sign-in settings; they take effect
 // on this instance at once and on others within SignInTTL.
 func (s *Service) SaveOIDCSettings(ctx context.Context, p *auth.Principal, in OIDCSettingsInput) (domain.OIDCSettings, time.Time, error) {
-	if err := requireSignInAdmin(p); err != nil {
+	if err := requireSessionAdmin(p); err != nil {
 		return domain.OIDCSettings{}, time.Time{}, err
 	}
 	next, err := s.mergeOIDCInput(ctx, in)
@@ -221,7 +221,7 @@ func (s *Service) putOIDCSettings(ctx context.Context, settings domain.OIDCSetti
 
 // TestOIDCSettings fetches the provider metadata for unsaved settings.
 func (s *Service) TestOIDCSettings(ctx context.Context, p *auth.Principal, in OIDCSettingsInput) error {
-	if err := requireSignInAdmin(p); err != nil {
+	if err := requireSessionAdmin(p); err != nil {
 		return err
 	}
 	next, err := s.mergeOIDCInput(ctx, in)
@@ -256,8 +256,8 @@ func (s *Service) AllowPasswordLogin(ctx context.Context, p *auth.Principal) err
 	return err
 }
 
-// ImportOIDCSettings stores settings from the deprecated ACKSY_OIDC_* config
-// unless the database already has some. It reports whether it imported.
+// ImportOIDCSettings stores settings unless the database already has some
+// (seeding, tests). It reports whether it imported.
 func (s *Service) ImportOIDCSettings(ctx context.Context, settings domain.OIDCSettings) (bool, error) {
 	if _, _, err := s.store.GetSettingWithTime(ctx, domain.OIDCSettingsKey); err == nil {
 		return false, nil
@@ -268,7 +268,7 @@ func (s *Service) ImportOIDCSettings(ctx context.Context, settings domain.OIDCSe
 		return false, err
 	}
 	if settings.Active() && s.opts.OIDCRedirectURL == "" {
-		return false, domain.Invalid("ACKSY_BASE_URL is required for OIDC sign-in (used for the redirect URL)")
+		return false, domain.Invalid("set ACKSY_BASE_URL first: the provider needs a redirect URL")
 	}
 	_, err := s.putOIDCSettings(ctx, settings)
 	return err == nil, err

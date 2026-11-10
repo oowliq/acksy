@@ -30,7 +30,7 @@ type RetentionResult struct {
 // Order of rules: expired (past expires_at), topic TTLs, read TTL by
 // priority, unread TTL, topic count limits, user count limit.
 func (s *Service) ApplyRetention(ctx context.Context) (*RetentionResult, error) {
-	pol := s.opts.Retention
+	pol := s.Settings(ctx).RetentionPolicy()
 	now := s.now()
 	res := &RetentionResult{}
 

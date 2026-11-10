@@ -18,12 +18,14 @@ type ActionResult struct {
 	Cleared bool `json:"cleared"`
 }
 
-// ActionRunner sends an http action's request.
+// ActionRunner sends an http action's request. allowPrivate permits
+// private and loopback destinations (server settings).
 type ActionRunner interface {
-	Run(ctx context.Context, a domain.Action) ActionResult
+	Run(ctx context.Context, a domain.Action, allowPrivate bool) ActionResult
 }
 
-// SetActionRunner enables http actions.
+// SetActionRunner wires the runner; the server settings switch actions on
+// and off.
 func (s *Service) SetActionRunner(r ActionRunner) { s.actionRunner = r }
 
 // actionLimitPerMinute bounds how often one user can trigger actions.
@@ -64,8 +66,9 @@ func (s *Service) RunAction(ctx context.Context, p *auth.Principal, notification
 	if err := p.Require(domain.ScopeWrite); err != nil {
 		return nil, err
 	}
-	if s.actionRunner == nil {
-		return nil, domain.Conflict("http actions are disabled on this server")
+	settings := s.Settings(ctx).Actions
+	if s.actionRunner == nil || !settings.Enabled {
+		return nil, domain.Conflict("http actions are turned off on this server")
 	}
 	n, err := s.visibleNotification(ctx, s.store, p, notificationID)
 	if err != nil {
@@ -87,7 +90,7 @@ func (s *Service) RunAction(ctx context.Context, p *auth.Principal, notification
 	}
 	defer s.actionsRunning.done(key)
 
-	res := s.actionRunner.Run(context.WithoutCancel(ctx), a)
+	res := s.actionRunner.Run(context.WithoutCancel(ctx), a, settings.AllowPrivate)
 	s.log.InfoContext(ctx, "action run", "notification_id", n.ID, "index", index, "status", res.Status, "ok", res.OK)
 	if res.OK && a.Clear && n.ReadAt == nil {
 		read := true

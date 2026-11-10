@@ -25,11 +25,13 @@ describe('SettingsNav', () => {
     await renderAt('/settings/users', true)
     expect(screen.getByText('Admin')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Users' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: 'Server' })).toBeTruthy()
   })
 
   it('hides Users from regular users', async () => {
     await renderAt('/settings/account', false)
     expect(screen.queryByRole('link', { name: 'Users' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Server' })).toBeNull()
   })
 
   it('marks the section of a nested page as current', async () => {

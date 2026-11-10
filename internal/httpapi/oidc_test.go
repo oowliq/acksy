@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/oowliq/acksy/internal/auth"
 	"github.com/oowliq/acksy/internal/auth/oidctest"
@@ -36,7 +35,7 @@ func oidcFactory(idp *oidctest.IdP) func(domain.OIDCSettings) service.OIDCProvid
 func newOIDCAPI(t *testing.T, policy oidcPolicy, passwordOff bool) (http.Handler, *service.Service, *oidctest.IdP) {
 	t.Helper()
 	idp := oidctest.New(t)
-	h, svc := newAPIWithService(t, Options{SessionTTL: time.Hour}, service.Options{
+	h, svc := newAPIWithService(t, Options{}, service.Options{
 		NewOIDCProvider: oidcFactory(idp), OIDCRedirectURL: "https://acksy.test/api/v1/auth/oidc/callback",
 	})
 	st := domain.DefaultOIDCSettings()

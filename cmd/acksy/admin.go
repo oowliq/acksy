@@ -41,9 +41,7 @@ func withService(ctx context.Context, cfg config.Config, fn func(*service.Servic
 	b := memory.New()
 	defer b.Close()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return fn(service.New(store.New(db), b, log, service.Options{
-		SessionTTL: cfg.SessionTTL,
-	}))
+	return fn(service.New(store.New(db), b, log, service.Options{}))
 }
 
 // readPassword reads a password from stdin: prompted (twice) on a terminal,

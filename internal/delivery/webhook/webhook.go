@@ -34,29 +34,33 @@ type Queue interface {
 	WebhookDelivered(ctx context.Context, d *domain.WebhookDelivery) error
 	WebhookDropped(ctx context.Context, d *domain.WebhookDelivery) error
 	WebhookAttemptFailed(ctx context.Context, d *domain.WebhookDelivery, status int, errMsg string, permanent bool, retryAfter time.Duration) error
+	// Settings are the server settings in effect: they switch delivery on
+	// and off and allow private destinations.
+	Settings(ctx context.Context) domain.ServerSettings
 }
 
 // Config tunes the worker.
 type Config struct {
 	// BaseURL builds links back to the app in payloads (optional).
 	BaseURL string
-	// AllowPrivate permits private and loopback targets (LAN services such
-	// as Home Assistant). Off by default to prevent SSRF.
-	AllowPrivate bool
-	Workers      int           // concurrent requests (default 4)
-	Poll         time.Duration // queue poll interval (default 5s)
-	Lease        time.Duration // how long a claimed delivery stays reserved (default 2m)
-	// Client overrides the HTTP client (tests); default is a netguard client.
+	Workers int           // concurrent requests (default 4)
+	Poll    time.Duration // queue poll interval (default 5s)
+	Lease   time.Duration // how long a claimed delivery stays reserved (default 2m)
+	// Client overrides the HTTP client for every request (tests). By default
+	// netguard clients are used, one of them allowing private and loopback
+	// targets (LAN services such as Home Assistant) when the server settings
+	// say so; off by default to prevent SSRF.
 	Client *http.Client
 }
 
 // Worker sends queued deliveries.
 type Worker struct {
-	q    Queue
-	cfg  Config
-	log  *slog.Logger
-	wake chan struct{}
-	now  func() time.Time
+	q       Queue
+	cfg     Config
+	private *http.Client // used when the settings allow private targets
+	log     *slog.Logger
+	wake    chan struct{}
+	now     func() time.Time
 }
 
 // batch bounds how many due deliveries one pass reads.
@@ -73,10 +77,12 @@ func New(q Queue, cfg Config, log *slog.Logger) *Worker {
 	if cfg.Lease <= 0 {
 		cfg.Lease = 2 * time.Minute
 	}
+	private := cfg.Client
 	if cfg.Client == nil {
-		cfg.Client = netguard.NewClient(netguard.Options{AllowPrivate: cfg.AllowPrivate, Timeout: 30 * time.Second})
+		cfg.Client = netguard.NewClient(netguard.Options{Timeout: 30 * time.Second})
+		private = netguard.NewClient(netguard.Options{AllowPrivate: true, Timeout: 30 * time.Second})
 	}
-	return &Worker{q: q, cfg: cfg, log: log, wake: make(chan struct{}, 1), now: time.Now}
+	return &Worker{q: q, cfg: cfg, private: private, log: log, wake: make(chan struct{}, 1), now: time.Now}
 }
 
 // Notify implements service.Notifier: new deliveries were committed, so
@@ -106,6 +112,9 @@ func (w *Worker) Run(ctx context.Context) {
 
 // drain sends every due delivery, a batch at a time.
 func (w *Worker) drain(ctx context.Context) {
+	if !w.q.Settings(ctx).Webhooks.Enabled {
+		return // switched off: deliveries stay queued until it is back on
+	}
 	for ctx.Err() == nil {
 		due, err := w.q.DueWebhookDeliveries(ctx, batch)
 		if err != nil {
@@ -199,10 +208,14 @@ func (w *Worker) attempt(ctx context.Context, hook *domain.Webhook, event domain
 	}
 	hr.Header.Set("User-Agent", "Acksy-Webhook/"+buildinfo.Version)
 
-	resp, err := w.cfg.Client.Do(hr)
+	client := w.cfg.Client
+	if w.q.Settings(ctx).Webhooks.AllowPrivate {
+		client = w.private
+	}
+	resp, err := client.Do(hr)
 	if err != nil {
 		if netguard.Blocked(err) {
-			return outcome{err: "destination is a private address; set ACKSY_WEBHOOK_ALLOW_PRIVATE=true to allow LAN targets", permanent: true}
+			return outcome{err: "destination is a private address; allow private addresses for webhooks in the server settings to reach LAN targets", permanent: true}
 		}
 		return outcome{err: netguard.Describe(err)}
 	}

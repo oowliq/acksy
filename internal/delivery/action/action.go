@@ -19,36 +19,40 @@ import (
 
 // Config tunes the runner.
 type Config struct {
-	// AllowPrivate lets actions reach private and loopback addresses (LAN
-	// services such as Home Assistant). Off by default: the URL comes from
-	// whoever published, and the request is made by the server.
-	AllowPrivate bool
-	// Client overrides the HTTP client (tests).
+	// Client overrides the HTTP client for every request (tests).
 	Client *http.Client
 }
 
-// Runner sends action requests.
+// Runner sends action requests. Whether private and loopback addresses (LAN
+// services such as Home Assistant) are allowed is decided per request from
+// the server settings: off by default, because the URL comes from whoever
+// published and the request is made by the server.
 type Runner struct {
-	client *http.Client
+	strict, private *http.Client
 }
 
 // New builds a runner.
 func New(cfg Config) *Runner {
-	c := cfg.Client
-	if c == nil {
-		c = netguard.NewClient(netguard.Options{AllowPrivate: cfg.AllowPrivate, Timeout: 15 * time.Second})
+	strict, private := cfg.Client, cfg.Client
+	if cfg.Client == nil {
+		strict = netguard.NewClient(netguard.Options{Timeout: 15 * time.Second})
+		private = netguard.NewClient(netguard.Options{AllowPrivate: true, Timeout: 15 * time.Second})
 	}
-	// Redirects are not followed: Go would resend the secret headers (all but
-	// Authorization and Cookie) and, for 307/308, the body to wherever the
-	// target points, possibly another host. A redirect is reported as its
-	// status instead.
+	return &Runner{strict: noRedirects(strict), private: noRedirects(private)}
+}
+
+// noRedirects copies c so that redirects are not followed: Go would resend
+// the secret headers (all but Authorization and Cookie) and, for 307/308,
+// the body to wherever the target points, possibly another host. A redirect
+// is reported as its status instead.
+func noRedirects(c *http.Client) *http.Client {
 	nc := *c
 	nc.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
-	return &Runner{client: &nc}
+	return &nc
 }
 
 // Run implements service.ActionRunner.
-func (r *Runner) Run(ctx context.Context, a domain.Action) service.ActionResult {
+func (r *Runner) Run(ctx context.Context, a domain.Action, allowPrivate bool) service.ActionResult {
 	var body io.Reader
 	if a.Body != "" {
 		body = strings.NewReader(a.Body)
@@ -66,10 +70,14 @@ func (r *Runner) Run(ctx context.Context, a domain.Action) service.ActionResult 
 	if a.Body != "" && req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	resp, err := r.client.Do(req)
+	client := r.strict
+	if allowPrivate {
+		client = r.private
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		if netguard.Blocked(err) {
-			return service.ActionResult{Error: "destination is a private address; set ACKSY_ACTIONS_ALLOW_PRIVATE=true to allow LAN targets"}
+			return service.ActionResult{Error: "destination is a private address; allow private addresses for actions in the server settings to reach LAN targets"}
 		}
 		return service.ActionResult{Error: netguard.Describe(err)}
 	}

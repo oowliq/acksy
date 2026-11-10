@@ -19,6 +19,7 @@ export const queryKeys = {
   },
   tokens: ['tokens'] as const,
   oidcSettings: ['settings', 'oidc'] as const,
+  serverSettings: ['settings', 'server'] as const,
   users: {
     all: ['users'] as const,
     detail: (id: string) => ['users', 'detail', id] as const,

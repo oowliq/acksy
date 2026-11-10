@@ -485,3 +485,17 @@ func TestEventsAreSequencedPerUser(t *testing.T) {
 }
 
 type storeQuerier = store.Querier
+
+// putSettings stores server settings as they are, without validation (tests
+// use values below the production minimums).
+func (e *env) putSettings(s domain.ServerSettings) {
+	e.t.Helper()
+	raw, err := json.Marshal(s)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	if err := e.svc.store.PutSetting(context.Background(), domain.ServerSettingsKey, string(raw), e.svc.now()); err != nil {
+		e.t.Fatal(err)
+	}
+	e.svc.server.Store(nil) // re-read on next use
+}

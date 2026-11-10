@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/oowliq/acksy/internal/auth/oidctest"
 	"github.com/oowliq/acksy/internal/service"
@@ -12,7 +11,7 @@ import (
 
 func TestOIDCSettingsAPI(t *testing.T) {
 	idp := oidctest.New(t)
-	h, svc := newAPIWithService(t, Options{SessionTTL: time.Hour}, service.Options{
+	h, svc := newAPIWithService(t, Options{}, service.Options{
 		NewOIDCProvider: oidcFactory(idp), OIDCRedirectURL: "https://acksy.test/api/v1/auth/oidc/callback",
 	})
 	seedUsers(t, svc)

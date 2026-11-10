@@ -66,7 +66,7 @@ type liveServer struct {
 
 func startLive(t *testing.T) *liveServer {
 	t.Helper()
-	h, svc := newAPIWith(t, Options{SessionTTL: time.Hour, KeepAlive: 50 * time.Millisecond})
+	h, svc := newAPIWith(t, Options{KeepAlive: 50 * time.Millisecond})
 	seedUsers(t, svc)
 
 	l := newPipeListener()

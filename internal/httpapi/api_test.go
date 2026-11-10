@@ -30,7 +30,7 @@ type client struct {
 
 func newAPI(t *testing.T) (http.Handler, *service.Service) {
 	t.Helper()
-	return newAPIWith(t, Options{SessionTTL: time.Hour})
+	return newAPIWith(t, Options{})
 }
 
 func newAPIWith(t *testing.T, opts Options) (http.Handler, *service.Service) {

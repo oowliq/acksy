@@ -205,8 +205,9 @@ func basic(user, password string) string {
 func discardLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
 func TestPublishRateLimitHTTP(t *testing.T) {
-	h, svc := newAPIWithService(t, Options{}, service.Options{PublishLimit: service.PublishLimit{PerToken: 3}})
+	h, svc := newAPIWithService(t, Options{}, service.Options{})
 	seedUsers(t, svc)
+	putServerSettings(t, h, func(s map[string]any) { s["publish_limit"] = map[string]any{"per_token": 3, "per_user": 120} })
 	tok := tokenFor(t, svc, "root", []string{"notifications:publish"})
 	c := &client{t: t, h: h, token: tok}
 

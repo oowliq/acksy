@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gopkg.in/yaml.v3"
@@ -36,7 +35,7 @@ func TestOpenAPICoversRoutes(t *testing.T) {
 		}
 	}
 
-	h, _ := newAPIWith(t, Options{SessionTTL: time.Hour})
+	h, _ := newAPIWith(t, Options{})
 	routed := map[string]bool{}
 	err := chi.Walk(h.(chi.Routes), func(method, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
 		if !strings.HasPrefix(route, "/api/v1/") {

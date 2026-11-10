@@ -119,8 +119,11 @@ func TestApplyToKey(t *testing.T) {
 func TestPublishRateLimit(t *testing.T) {
 	ctx := context.Background()
 	e := newEnv(t)
-	e.svc.tokenLimit = auth.NewRateLimiter(60, 2) // 1/s, bursts of 2 per token
-	e.svc.userLimit = auth.NewRateLimiter(60, 3)  // 1/s, bursts of 3 per user
+	e.svc.publishLimit.Store(&publishLimiters{
+		limit: domain.DefaultServerSettings().PublishLimit, // kept while the settings don't change
+		token: auth.NewRateLimiter(60, 2),                  // 1/s, bursts of 2 per token
+		user:  auth.NewRateLimiter(60, 3),                  // 1/s, bursts of 3 per user
+	})
 	alice := e.user("alice", domain.RoleUser)
 	t1 := e.token(alice, []string{"notifications:publish"})
 	t2 := e.token(alice, []string{"notifications:publish"})

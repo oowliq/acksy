@@ -22,7 +22,15 @@ type retentionEnv struct {
 func newRetentionEnv(t *testing.T, pol domain.RetentionPolicy) *retentionEnv {
 	t.Helper()
 	e := newEnv(t)
-	e.svc.opts.Retention = pol
+	s := domain.DefaultServerSettings()
+	s.Retention = domain.RetentionSettings{
+		ReadDays: int(pol.ReadTTL / day), UnreadDays: int(pol.UnreadTTL / day), MaxPerUser: pol.MaxPerUser,
+		ReadDaysByPriority: map[int]int{},
+	}
+	for prio, ttl := range pol.ReadTTLByPriority {
+		s.Retention.ReadDaysByPriority[prio] = int(ttl / day)
+	}
+	e.putSettings(s)
 	return &retentionEnv{env: e, t: t, alice: e.user("alice", domain.RoleUser)}
 }
 

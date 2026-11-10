@@ -22,13 +22,14 @@ func (s *Service) InviteToTopic(ctx context.Context, p *auth.Principal, topicID,
 	}
 	// The invitation sends a notification: it shares the publish budget, so
 	// re-inviting after declines cannot flood someone's inbox.
-	if err := s.checkPublishRate(p); err != nil {
+	if err := s.checkPublishRate(ctx, p); err != nil {
 		return nil, err
 	}
 	var (
 		out       *domain.TopicInvite
 		delivered []domain.Notification
 	)
+	hooksOn := s.Settings(ctx).Webhooks.Enabled // read before the transaction
 	err := s.tx(ctx, func(q store.Querier, em *emitter) error {
 		delivered = delivered[:0]
 		t, err := s.ownedTopic(ctx, q, p, topicID)
@@ -67,7 +68,7 @@ func (s *Service) InviteToTopic(ctx context.Context, p *auth.Principal, topicID,
 			Priority: domain.PriorityDefault, Tags: []string{"invitation"}, Actions: []domain.Action{},
 			DedupKey: inviteDedupKey(t.ID), Source: "acksy", CreatedAt: now, UpdatedAt: now,
 		}
-		wq := &webhookQueue{byUser: map[string][]domain.Webhook{}}
+		wq := newWebhookQueue(hooksOn)
 		stored, _, err := s.storeNotification(ctx, q, em, wq, n)
 		if err != nil {
 			return err
@@ -78,7 +79,7 @@ func (s *Service) InviteToTopic(ctx context.Context, p *auth.Principal, topicID,
 	if err != nil {
 		return nil, err
 	}
-	s.notify(delivered)
+	s.notify(ctx, delivered)
 	return out, nil
 }
 

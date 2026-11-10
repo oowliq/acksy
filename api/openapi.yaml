@@ -83,7 +83,7 @@ paths:
       tags: [auth]
       operationId: login
       summary: Log in with username and password
-      description: Sets the `acksy_session` cookie. Repeated failures for a username are throttled. Returns 403 when password login is disabled (`ACKSY_OIDC_DISABLE_PASSWORD_LOGIN`).
+      description: Sets the `acksy_session` cookie. Repeated failures for a username are throttled. Returns 403 when password login is disabled in the sign-in settings.
       security: []
       requestBody:
         required: true
@@ -299,9 +299,9 @@ paths:
         same topic (or, without a topic, among their topic-less notifications)
         updates it in place, bumps `repeat_count` and resets its read state.
 
-        Publishing is rate limited per API token and per user
-        (`ACKSY_PUBLISH_LIMIT_TOKEN`, `ACKSY_PUBLISH_LIMIT_USER`, per minute);
-        the ntfy and gotify adapters share the same budget.
+        Publishing is rate limited per API token and per user (per minute,
+        set in the server settings); the ntfy and gotify adapters share the
+        same budget.
       requestBody:
         required: true
         content:
@@ -379,7 +379,8 @@ paths:
         also marks the notification read. Needs `notifications:write`; only the
         notification's recipient can run it. The same action cannot run twice at
         once (409), and runs are rate limited per user (429). LAN targets need
-        `ACKSY_ACTIONS_ALLOW_PRIVATE`.
+        `actions.allow_private` in the server settings. 409 when actions are
+        turned off.
       responses:
         "200":
           description: The action ran (check `ok`)
@@ -927,7 +928,7 @@ paths:
       tags: [webhooks]
       operationId: listWebhookDeliveries
       summary: Pending and failed deliveries (newest 50)
-      description: Delivered requests are removed from the queue; failed ones are kept for `ACKSY_WEBHOOK_FAILED_RETENTION`.
+      description: Delivered requests are removed from the queue; failed ones are kept for `webhooks.failed_retention_days` (server settings).
       responses:
         "200":
           description: Deliveries
@@ -1129,6 +1130,44 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /settings/server:
+    get:
+      tags: [settings]
+      operationId: getServerSettings
+      summary: Server settings (admin, session only)
+      description: |
+        Runtime settings of the instance. Only what is needed to start the
+        server (listen address, database, Redis, base URL, logging, cookies)
+        comes from the environment; see ADR 0008.
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServerSettingsView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      tags: [settings]
+      operationId: putServerSettings
+      summary: Change server settings (admin, session only)
+      description: |
+        Replaces all settings. Effective on this instance at once and on
+        others within 15 seconds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServerSettings" }
+      responses:
+        "200":
+          description: Saved settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServerSettingsView" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /settings/oidc:
     get:
       tags: [settings]
@@ -1433,7 +1472,7 @@ components:
       additionalProperties: false
       properties:
         name: { type: string, maxLength: 64 }
-        url: { type: string, format: uri, description: "http(s). Private addresses need `ACKSY_WEBHOOK_ALLOW_PRIVATE`." }
+        url: { type: string, format: uri, description: "http(s). Private addresses need `webhooks.allow_private` in the server settings." }
         format: { type: string, enum: [acksy, discord, slack], default: acksy }
         topics:
           type: array
@@ -1580,6 +1619,92 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
+    ServerSettings:
+      type: object
+      required: [adapters, publish_limit, push, webhooks, actions, retention, session_days, event_retention_days]
+      properties:
+        adapters:
+          type: object
+          additionalProperties: false
+          required: [ntfy, gotify]
+          description: Publish-compatible endpoints `/ntfy/…` and `/gotify/message` (404 when off).
+          properties:
+            ntfy: { type: boolean }
+            gotify: { type: boolean }
+        publish_limit:
+          type: object
+          additionalProperties: false
+          required: [per_token, per_user]
+          description: Publishes per minute (bursts of the same size); 0 disables a limit.
+          properties:
+            per_token: { type: integer, minimum: 0, maximum: 100000 }
+            per_user: { type: integer, minimum: 0, maximum: 100000, description: Across all of the user's tokens. }
+        push:
+          type: object
+          additionalProperties: false
+          required: [enabled, subject]
+          properties:
+            enabled: { type: boolean }
+            subject:
+              type: string
+              description: |
+                VAPID contact for push services: an https URL or an e-mail
+                address. Empty uses an https base URL; Safari rejects pushes
+                without one.
+        webhooks:
+          type: object
+          additionalProperties: false
+          required: [enabled, allow_private, failed_retention_days]
+          properties:
+            enabled: { type: boolean, description: When off, deliveries are not queued and queued ones wait. }
+            allow_private:
+              type: boolean
+              description: Allow private and loopback destinations (LAN). Off by default to prevent SSRF.
+            failed_retention_days: { type: integer, minimum: 1, maximum: 365 }
+        actions:
+          type: object
+          additionalProperties: false
+          required: [enabled, allow_private]
+          properties:
+            enabled: { type: boolean }
+            allow_private:
+              type: boolean
+              description: Allow private and loopback destinations. The URL is set by the publisher.
+        retention:
+          type: object
+          additionalProperties: false
+          required: [read_days, read_days_by_priority, unread_days, max_per_user]
+          description: 0 disables a rule.
+          properties:
+            read_days:
+              type: integer
+              minimum: 0
+              maximum: 3650
+              description: Delete read and archived notifications this many days after their last change.
+            read_days_by_priority:
+              type: object
+              description: Overrides `read_days` per priority (keys 1-5).
+              additionalProperties: { type: integer, minimum: 0, maximum: 3650 }
+            unread_days: { type: integer, minimum: 0, maximum: 3650 }
+            max_per_user:
+              type: integer
+              minimum: 0
+              maximum: 1000000
+              description: 0 or at least 100. The oldest read notifications go first.
+        session_days: { type: integer, minimum: 1, maximum: 365, description: Login session lifetime, extended on activity. }
+        event_retention_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+          description: How long events are kept for resuming streams with `since`.
+    ServerSettingsView:
+      allOf:
+        - $ref: "#/components/schemas/ServerSettings"
+        - type: object
+          required: [updated_at]
+          properties:
+            updated_at: { type: [string, "null"], format: date-time, description: null until first saved. }
+
     OIDCSettings:
       type: object
       required: [enabled, issuer, client_id, client_secret_set, name, scopes, username_claim, role_claim, admin_values, auto_create, disable_password_login, redirect_url, updated_at]
@@ -1674,7 +1799,7 @@ components:
       description: |
         Read (and archived) notifications of this topic are deleted this many
         days after their last change, instead of the instance's
-        `ACKSY_RETENTION_READ` / per-priority TTL. Applies to every member's copy.
+        read retention (server settings, per priority). Applies to every member's copy.
     TopicMaxNotifications:
       type: integer
       minimum: 10

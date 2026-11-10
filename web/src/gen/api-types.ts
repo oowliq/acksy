@@ -12,7 +12,7 @@ export type WebhookRequest = {
    */
   name?: string
   /**
-   * @description http(s). Private addresses need `ACKSY_WEBHOOK_ALLOW_PRIVATE`.
+   * @description http(s). Private addresses need `webhooks.allow_private` in the server settings.
    *
    * Format: `uri`
    * @type string | undefined
@@ -292,6 +292,130 @@ export type User = {
   updated_at: string
 }
 
+export type ServerSettings = {
+  /**
+   * @description Publish-compatible endpoints `/ntfy/…` and `/gotify/message` (404 when off).
+   * @type object
+   */
+  adapters: {
+    ntfy: boolean
+    gotify: boolean
+  }
+  /**
+   * @description Publishes per minute (bursts of the same size); 0 disables a limit.
+   * @type object
+   */
+  publish_limit: {
+    /**
+     * @minimum 0
+     * @maximum 100000
+     * @type integer
+     */
+    per_token: number
+    /**
+     * @description Across all of the user's tokens.
+     * @minimum 0
+     * @maximum 100000
+     * @type integer
+     */
+    per_user: number
+  }
+  push: {
+    enabled: boolean
+    /**
+     * @description VAPID contact for push services: an https URL or an e-mail
+     * address. Empty uses an https base URL; Safari rejects pushes
+     * without one.
+     *
+     * @type string
+     */
+    subject: string
+  }
+  webhooks: {
+    /**
+     * @description When off
+     * @type boolean
+     */
+    enabled: boolean
+    /**
+     * @description Allow private and loopback destinations (LAN). Off by default to prevent SSRF.
+     * @type boolean
+     */
+    allow_private: boolean
+    /**
+     * @minimum 1
+     * @maximum 365
+     * @type integer
+     */
+    failed_retention_days: number
+  }
+  actions: {
+    enabled: boolean
+    /**
+     * @description Allow private and loopback destinations. The URL is set by the publisher.
+     * @type boolean
+     */
+    allow_private: boolean
+  }
+  /**
+   * @description 0 disables a rule.
+   * @type object
+   */
+  retention: {
+    /**
+     * @description Delete read and archived notifications this many days after their last change.
+     * @minimum 0
+     * @maximum 3650
+     * @type integer
+     */
+    read_days: number
+    /**
+     * @description Overrides `read_days` per priority (keys 1-5).
+     * @type object
+     */
+    read_days_by_priority: {
+      [key: string]: number
+    }
+    /**
+     * @minimum 0
+     * @maximum 3650
+     * @type integer
+     */
+    unread_days: number
+    /**
+     * @description 0 or at least 100. The oldest read notifications go first.
+     * @minimum 0
+     * @maximum 1000000
+     * @type integer
+     */
+    max_per_user: number
+  }
+  /**
+   * @description Login session lifetime
+   * @minimum 1
+   * @maximum 365
+   * @type integer
+   */
+  session_days: number
+  /**
+   * @description How long events are kept for resuming streams with `since`.
+   * @minimum 1
+   * @maximum 365
+   * @type integer
+   */
+  event_retention_days: number
+}
+
+export type ServerSettingsView = ServerSettings & {
+  /**
+   * @description null until first saved.
+   *
+   * Format: `date-time`
+   * @type string
+   */
+  updated_at: string | null
+}
+
 export type OIDCSettings = {
   enabled: boolean
   issuer: string
@@ -377,7 +501,7 @@ export type Me = {
 /**
  * @description Read (and archived) notifications of this topic are deleted this many
  * days after their last change, instead of the instance's
- * `ACKSY_RETENTION_READ` / per-priority TTL. Applies to every member's copy.
+ * read retention (server settings, per priority). Applies to every member's copy.
  *
  * @minimum 1
  * @maximum 3650
@@ -1571,7 +1695,7 @@ export type CreateTopicBody = {
   /**
    * @description Read (and archived) notifications of this topic are deleted this many
    * days after their last change, instead of the instance's
-   * `ACKSY_RETENTION_READ` / per-priority TTL. Applies to every member's copy.
+   * read retention (server settings, per priority). Applies to every member's copy.
    *
    * @minimum 1
    * @maximum 3650
@@ -2574,6 +2698,59 @@ export type DeleteTokenResponses = {
  * @description Union of all possible responses
  */
 export type DeleteTokenResponse = DeleteTokenStatus204
+
+export type GetServerSettingsStatus200 = ServerSettingsView
+
+export type GetServerSettingsStatus401 = Error
+
+export type GetServerSettingsStatus403 = Error
+
+export type GetServerSettingsOptions = {
+  body?: never
+  path?: never
+  query?: never
+  headers?: never
+}
+
+export type GetServerSettingsResponses = {
+  '200': GetServerSettingsStatus200
+  '401': GetServerSettingsStatus401
+  '403': GetServerSettingsStatus403
+}
+
+/**
+ * @description Union of all possible responses
+ */
+export type GetServerSettingsResponse = GetServerSettingsStatus200
+
+export type PutServerSettingsStatus200 = ServerSettingsView
+
+export type PutServerSettingsStatus400 = Error
+
+export type PutServerSettingsStatus401 = Error
+
+export type PutServerSettingsStatus403 = Error
+
+export type PutServerSettingsBody = ServerSettings
+
+export type PutServerSettingsOptions = {
+  body: PutServerSettingsBody
+  path?: never
+  query?: never
+  headers?: never
+}
+
+export type PutServerSettingsResponses = {
+  '200': PutServerSettingsStatus200
+  '400': PutServerSettingsStatus400
+  '401': PutServerSettingsStatus401
+  '403': PutServerSettingsStatus403
+}
+
+/**
+ * @description Union of all possible responses
+ */
+export type PutServerSettingsResponse = PutServerSettingsStatus200
 
 export type GetOIDCSettingsStatus200 = OIDCSettings
 

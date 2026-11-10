@@ -1,5 +1,17 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Bell, ChevronLeft, ChevronRight, Hash, KeyRound, LogIn, type LucideIcon, UserRound, Users, Webhook } from 'lucide-react'
+import {
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Hash,
+  KeyRound,
+  LogIn,
+  type LucideIcon,
+  Server,
+  UserRound,
+  Users,
+  Webhook,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type SettingsPath =
@@ -10,6 +22,7 @@ type SettingsPath =
   | '/settings/webhooks'
   | '/settings/users'
   | '/settings/sign-in'
+  | '/settings/server'
 
 export const settingsSections: { to: SettingsPath; label: string; icon: LucideIcon; group: 'settings' | 'admin' }[] = [
   { to: '/settings/account', label: 'Account', icon: UserRound, group: 'settings' },
@@ -19,6 +32,7 @@ export const settingsSections: { to: SettingsPath; label: string; icon: LucideIc
   { to: '/settings/webhooks', label: 'Webhooks', icon: Webhook, group: 'settings' },
   { to: '/settings/users', label: 'Users', icon: Users, group: 'admin' },
   { to: '/settings/sign-in', label: 'Sign-in', icon: LogIn, group: 'admin' },
+  { to: '/settings/server', label: 'Server', icon: Server, group: 'admin' },
 ]
 
 const matches = (pathname: string, to: string) => pathname === to || pathname.startsWith(to + '/')

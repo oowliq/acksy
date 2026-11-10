@@ -33,7 +33,7 @@ func TestRun(t *testing.T) {
 		Type: "http", Label: "Open", URL: srv.URL + "/api/services/cover/open?x=1", Method: "PUT",
 		Headers: map[string]string{"Authorization": "Bearer S3CRET"}, Body: `{"entity_id":"cover.gate"}`,
 	}
-	res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a)
+	res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a, false)
 	if !res.OK || res.Status != 200 || res.Error != "" {
 		t.Fatalf("result: %+v", res)
 	}
@@ -44,24 +44,24 @@ func TestRun(t *testing.T) {
 	}
 
 	a.URL = srv.URL + "/fail"
-	if res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a); res.OK || res.Error != "HTTP 500" {
+	if res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a, false); res.OK || res.Error != "HTTP 500" {
 		t.Fatalf("failure: %+v", res)
 	}
 
 	// Redirects are not followed, so secret headers and body never reach
 	// the redirect target.
 	a.URL = srv.URL + "/redirect"
-	if res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a); res.OK || res.Error != "HTTP 307" ||
+	if res := New(Config{Client: http.DefaultClient}).Run(context.Background(), a, false); res.OK || res.Error != "HTTP 307" ||
 		got.URL.Path != "/redirect" {
 		t.Fatalf("redirect: %+v, last request %s", res, got.URL)
 	}
 
 	// LAN targets are refused unless allowed.
 	a.URL = srv.URL + "/ok"
-	if res := New(Config{}).Run(context.Background(), a); res.OK || !strings.Contains(res.Error, "ACKSY_ACTIONS_ALLOW_PRIVATE") {
+	if res := New(Config{}).Run(context.Background(), a, false); res.OK || !strings.Contains(res.Error, "allow private addresses") {
 		t.Fatalf("private: %+v", res)
 	}
-	if res := New(Config{AllowPrivate: true}).Run(context.Background(), a); !res.OK {
+	if res := New(Config{}).Run(context.Background(), a, true); !res.OK {
 		t.Fatalf("allow private: %+v", res)
 	}
 }
