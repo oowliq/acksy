@@ -617,11 +617,6 @@ export type APIToken = {
   id: string
   user_id: string
   name: string
-  /**
-   * @description First characters of the secret, for identification.
-   * @type string
-   */
-  prefix: string
   scopes: Scope[]
   topic_ids: string[]
   /**
@@ -2735,6 +2730,39 @@ export type DeleteTokenResponses = {
  * @description Union of all possible responses
  */
 export type DeleteTokenResponse = DeleteTokenStatus204
+
+export type RotateTokenPath = {
+  id: string
+}
+
+export type RotateTokenStatus200 = {
+  secret: string
+}
+
+export type RotateTokenStatus401 = Error
+
+export type RotateTokenStatus403 = Error
+
+export type RotateTokenStatus404 = Error
+
+export type RotateTokenOptions = {
+  body?: never
+  path: RotateTokenPath
+  query?: never
+  headers?: never
+}
+
+export type RotateTokenResponses = {
+  '200': RotateTokenStatus200
+  '401': RotateTokenStatus401
+  '403': RotateTokenStatus403
+  '404': RotateTokenStatus404
+}
+
+/**
+ * @description Union of all possible responses
+ */
+export type RotateTokenResponse = RotateTokenStatus200
 
 export type GetServerSettingsStatus200 = ServerSettingsView
 

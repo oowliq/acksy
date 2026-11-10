@@ -36,17 +36,14 @@ func TestPassword(t *testing.T) {
 }
 
 func TestAPIToken(t *testing.T) {
-	secret, prefix, hash := NewAPIToken()
+	secret, hash := NewAPIToken()
 	if !LooksLikeAPIToken(secret) {
 		t.Fatalf("bad shape %q", secret)
-	}
-	if !strings.HasPrefix(secret, prefix) || len(prefix) != len(TokenPrefix)+8 {
-		t.Fatalf("prefix %q of %q", prefix, secret)
 	}
 	if hash != HashSecret(secret) || len(hash) != 64 {
 		t.Fatal("hash mismatch")
 	}
-	other, _, _ := NewAPIToken()
+	other, _ := NewAPIToken()
 	if other == secret {
 		t.Fatal("tokens not random")
 	}

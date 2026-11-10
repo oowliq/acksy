@@ -8,7 +8,6 @@ type APIToken struct {
 	ID         string     `json:"id"`
 	UserID     string     `json:"user_id"`
 	Name       string     `json:"name"`
-	Prefix     string     `json:"prefix"`
 	SecretHash string     `json:"-"`
 	Scopes     Scopes     `json:"scopes"`
 	TopicIDs   []string   `json:"topic_ids"` // empty = all topics

@@ -41,6 +41,7 @@ type Querier interface {
 	CreateToken(ctx context.Context, t *domain.APIToken) error
 	GetTokenByHash(ctx context.Context, hash string) (*domain.APIToken, error)
 	ListTokens(ctx context.Context, userID string) ([]domain.APIToken, error)
+	RotateToken(ctx context.Context, userID, id, hash string) error
 	DeleteToken(ctx context.Context, userID, id string) error
 	TouchToken(ctx context.Context, id string, at time.Time) error
 

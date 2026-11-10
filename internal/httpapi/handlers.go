@@ -367,7 +367,18 @@ func (a *api) createToken(w http.ResponseWriter, r *http.Request) {
 		respondErr(w, r, a.log, err)
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusCreated, map[string]any{"token": ct.Token, "secret": ct.Secret})
+}
+
+func (a *api) rotateToken(w http.ResponseWriter, r *http.Request) {
+	secret, err := a.svc.RotateToken(r.Context(), principal(r), chi.URLParam(r, "id"))
+	if err != nil {
+		respondErr(w, r, a.log, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, map[string]string{"secret": secret})
 }
 
 func (a *api) deleteToken(w http.ResponseWriter, r *http.Request) {

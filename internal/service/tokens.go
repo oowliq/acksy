@@ -56,9 +56,9 @@ func (s *Service) CreateToken(ctx context.Context, p *auth.Principal, in CreateT
 			}
 			topicIDs = append(topicIDs, t.ID)
 		}
-		secret, prefix, hash := auth.NewAPIToken()
+		secret, hash := auth.NewAPIToken()
 		tok := &domain.APIToken{
-			ID: s.newID(), UserID: p.User.ID, Name: name, Prefix: prefix, SecretHash: hash,
+			ID: s.newID(), UserID: p.User.ID, Name: name, SecretHash: hash,
 			Scopes: scopes, TopicIDs: topicIDs, ExpiresAt: in.ExpiresAt, CreatedAt: now,
 		}
 		if err := q.CreateToken(ctx, tok); err != nil {
@@ -76,6 +76,18 @@ func (s *Service) ListTokens(ctx context.Context, p *auth.Principal) ([]domain.A
 		return nil, domain.Forbidden("tokens can only be managed from a login session")
 	}
 	return s.store.ListTokens(ctx, p.User.ID)
+}
+
+// RotateToken replaces the secret without changing the token's permissions or expiry.
+func (s *Service) RotateToken(ctx context.Context, p *auth.Principal, id string) (string, error) {
+	if !p.IsSession() {
+		return "", domain.Forbidden("tokens can only be managed from a login session")
+	}
+	secret, hash := auth.NewAPIToken()
+	if err := s.store.RotateToken(ctx, p.User.ID, id, hash); err != nil {
+		return "", err
+	}
+	return secret, nil
 }
 
 // DeleteToken revokes one of the caller's tokens.

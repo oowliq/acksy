@@ -508,7 +508,7 @@ func runContract(t *testing.T, newStore func(*testing.T) *SQLStore) {
 		u := mkUser(t, s, domain.RoleUser)
 		tp := mkTopic(t, s, u, "ci")
 		tok := &domain.APIToken{
-			ID: id("k"), UserID: u.ID, Name: "ci", Prefix: "abcd", SecretHash: id("hash"),
+			ID: id("k"), UserID: u.ID, Name: "ci", SecretHash: id("hash"),
 			Scopes: domain.Scopes{domain.ScopePublish}, TopicIDs: []string{tp.ID}, CreatedAt: now,
 		}
 		if err := s.CreateToken(ctx, tok); err != nil {
@@ -526,6 +526,20 @@ func runContract(t *testing.T, newStore func(*testing.T) *SQLStore) {
 			t.Fatalf("list: %+v", list)
 		}
 		other := mkUser(t, s, domain.RoleUser)
+		newHash := id("rotated")
+		if err := s.RotateToken(ctx, other.ID, tok.ID, newHash); !errors.Is(err, domain.ErrNotFound) {
+			t.Fatalf("rotate by non-owner: %v", err)
+		}
+		if err := s.RotateToken(ctx, u.ID, tok.ID, newHash); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.GetTokenByHash(ctx, tok.SecretHash); !errors.Is(err, domain.ErrNotFound) {
+			t.Fatalf("old hash: %v", err)
+		}
+		rotated, err := s.GetTokenByHash(ctx, newHash)
+		if err != nil || rotated.ID != tok.ID || rotated.LastUsedAt != nil || !rotated.Scopes.Has(domain.ScopePublish) || len(rotated.TopicIDs) != 1 || rotated.TopicIDs[0] != tp.ID {
+			t.Fatal("rotation did not preserve token identity and permissions")
+		}
 		if err := s.DeleteToken(ctx, other.ID, tok.ID); !errors.Is(err, domain.ErrNotFound) {
 			t.Fatalf("delete by non-owner: %v", err)
 		}

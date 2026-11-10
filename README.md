@@ -48,7 +48,7 @@ Self-hosted сервис уведомлений. Задача та же, что 
 | **Topic** | Необязательная категория пользователя. Её можно расшарить другим пользователям через приглашение, которое они должны принять. Тогда сообщение размножается на всех участников, и у каждого свой read-state. |
 | **Notification** | `id` (ULID), получатель, топик, `title`, `body` (markdown), `priority` 1–5, `tags`, `group_key`, `dedup_key`, `actions`, `click_url`, `expires_at`. |
 | **Read state** | `read_at`, `archived_at`, `snoozed_until`. Хранится на сервере. |
-| **API token** | Хеш в БД, видимый префикс, scope-ы, ограничение по топикам, `expires_at`. |
+| **API token** | Секрет показывается один раз при создании или перевыпуске, в БД хранится хеш. Сохраняются scope-ы, ограничение по топикам, `expires_at`. |
 | **Event** | `notification.created`, `notification.updated`, `notification.deleted`, `notifications.bulk`, `topic.changed`, `topic.removed`, `invitations.changed`. У каждого пользователя монотонный `seq`. |
 
 ## Стек

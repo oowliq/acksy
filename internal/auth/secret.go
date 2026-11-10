@@ -12,9 +12,6 @@ import (
 // by secret scanners).
 const TokenPrefix = "ack_"
 
-// displayPrefixLen is how many random characters are kept for display.
-const displayPrefixLen = 8
-
 var b32 = base32.StdEncoding.WithPadding(base32.NoPadding)
 
 func randomString(n int) string {
@@ -25,11 +22,11 @@ func randomString(n int) string {
 	return strings.ToLower(b32.EncodeToString(b))
 }
 
-// NewAPIToken returns a new token secret, its display prefix and its hash.
-func NewAPIToken() (secret, prefix, hash string) {
+// NewAPIToken returns a new token secret and its hash.
+func NewAPIToken() (secret, hash string) {
 	body := randomString(25) // 200 bits -> 40 base32 characters
 	secret = TokenPrefix + body
-	return secret, secret[:len(TokenPrefix)+displayPrefixLen], HashSecret(secret)
+	return secret, HashSecret(secret)
 }
 
 // LooksLikeAPIToken reports whether s has the API token shape.

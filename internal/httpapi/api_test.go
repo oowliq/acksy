@@ -187,15 +187,25 @@ func TestAPIEndToEnd(t *testing.T) {
 		Token  domain.APIToken `json:"token"`
 		Secret string          `json:"secret"`
 	}](t, rec)
-	if !strings.HasPrefix(created.Secret, "ack_") || created.Token.Prefix == "" {
-		t.Fatalf("token: %+v", created)
+	if !strings.HasPrefix(created.Secret, "ack_") {
+		t.Fatal("unexpected API token format")
 	}
 	listed := root.do(http.MethodGet, "/api/v1/tokens", nil).Body.String()
-	if strings.Contains(listed, created.Secret) || strings.Contains(listed, "secret_hash") {
+	if strings.Contains(listed, created.Secret[:12]) || strings.Contains(listed, `"prefix"`) || strings.Contains(listed, "secret_hash") {
 		t.Fatal("token list leaks secrets")
 	}
 
 	ci := &client{t: t, h: h, token: created.Secret}
+	rotatePath := "/api/v1/tokens/" + created.Token.ID + "/rotate"
+	expect(t, ci.do(http.MethodPost, rotatePath, nil), http.StatusForbidden)
+	expect(t, invitee.do(http.MethodPost, rotatePath, nil), http.StatusNotFound)
+	rec = root.do(http.MethodPost, rotatePath, nil)
+	expect(t, rec, http.StatusOK)
+	replacement := decode[struct {
+		Secret string `json:"secret"`
+	}](t, rec)
+	expect(t, ci.do(http.MethodGet, "/api/v1/me", nil), http.StatusUnauthorized)
+	ci.token = replacement.Secret
 	rec = ci.do(http.MethodPost, "/api/v1/notifications", map[string]any{
 		"topic": "ci", "title": "Build #42", "body": "**passed**", "tags": []string{"ci"},
 	})

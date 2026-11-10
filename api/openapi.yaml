@@ -1132,6 +1132,26 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /tokens/{id}/rotate:
+    parameters: [{ $ref: "#/components/parameters/ID" }]
+    post:
+      tags: [tokens]
+      operationId: rotateToken
+      summary: Replace the token secret immediately, retaining scopes, topics and expiry (session only)
+      responses:
+        "200":
+          description: New secret, shown once
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret]
+                properties:
+                  secret: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /settings/server:
     get:
       tags: [settings]
@@ -1843,14 +1863,11 @@ components:
 
     APIToken:
       type: object
-      required: [id, user_id, name, prefix, scopes, topic_ids, created_at]
+      required: [id, user_id, name, scopes, topic_ids, created_at]
       properties:
         id: { type: string }
         user_id: { type: string }
         name: { type: string }
-        prefix:
-          type: string
-          description: First characters of the secret, for identification.
         scopes:
           type: array
           items: { $ref: "#/components/schemas/Scope" }

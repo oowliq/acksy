@@ -11,7 +11,6 @@ type tokenRow struct {
 	ID         string `db:"id"`
 	UserID     string `db:"user_id"`
 	Name       string `db:"name"`
-	Prefix     string `db:"prefix"`
 	SecretHash string `db:"secret_hash"`
 	Scopes     string `db:"scopes"`
 	ExpiresAt  *int64 `db:"expires_at"`
@@ -19,11 +18,11 @@ type tokenRow struct {
 	CreatedAt  int64  `db:"created_at"`
 }
 
-const tokenCols = `id, user_id, name, prefix, secret_hash, scopes, expires_at, last_used_at, created_at` //nolint:gosec // column list, not a credential
+const tokenCols = `id, user_id, name, secret_hash, scopes, expires_at, last_used_at, created_at` //nolint:gosec // column list, not a credential
 
 func (r tokenRow) toDomain() domain.APIToken {
 	return domain.APIToken{
-		ID: r.ID, UserID: r.UserID, Name: r.Name, Prefix: r.Prefix, SecretHash: r.SecretHash,
+		ID: r.ID, UserID: r.UserID, Name: r.Name, SecretHash: r.SecretHash,
 		Scopes:     domain.ScopesFromString(r.Scopes),
 		TopicIDs:   []string{},
 		ExpiresAt:  fromMsPtr(r.ExpiresAt),
@@ -33,8 +32,8 @@ func (r tokenRow) toDomain() domain.APIToken {
 }
 
 func (q queries) CreateToken(ctx context.Context, t *domain.APIToken) error {
-	_, err := q.exec(ctx, `INSERT INTO api_tokens (`+tokenCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.UserID, t.Name, t.Prefix, t.SecretHash, t.Scopes.String(),
+	_, err := q.exec(ctx, `INSERT INTO api_tokens (`+tokenCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.UserID, t.Name, t.SecretHash, t.Scopes.String(),
 		msPtr(t.ExpiresAt), msPtr(t.LastUsedAt), ms(t.CreatedAt))
 	if err != nil {
 		return err
@@ -80,6 +79,10 @@ func (q queries) ListTokens(ctx context.Context, userID string) ([]domain.APITok
 		}
 	}
 	return out, nil
+}
+
+func (q queries) RotateToken(ctx context.Context, userID, id, hash string) error {
+	return q.execOne(ctx, "token", `UPDATE api_tokens SET secret_hash = ?, last_used_at = NULL WHERE user_id = ? AND id = ?`, hash, userID, id)
 }
 
 func (q queries) DeleteToken(ctx context.Context, userID, id string) error {

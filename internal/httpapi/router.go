@@ -195,6 +195,7 @@ func (a *api) routes(root chi.Router) {
 			r.Get("/", a.listTokens)
 			r.Post("/", a.createToken)
 			r.Delete("/{id}", a.deleteToken)
+			r.Post("/{id}/rotate", a.rotateToken)
 		})
 
 		r.Get("/events", a.events)
