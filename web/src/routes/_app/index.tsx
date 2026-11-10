@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { CheckCheck, Inbox as InboxIcon, Layers, Loader2, RotateCw, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { viewLabel } from '@/components/app-shell'
+import { PriorityFilter } from '@/components/inbox/priority-filter'
 import { Reader } from '@/components/inbox/reader'
 import { NotificationRow } from '@/components/inbox/row'
 import { SearchField } from '@/components/inbox/search-field'
@@ -264,6 +265,10 @@ function InboxPage() {
   // Counts know nothing about search, priority or group: don't show a number that lies.
   const narrowed = !!(search.q || search.prio || search.group)
 
+  const priorityFilter = (
+    <PriorityFilter value={search.prio} onChange={(prio) => void navigate({ search: (p: InboxSearch) => ({ ...p, prio }) })} />
+  )
+
   return (
     <div className="grid h-full min-h-0 md:grid-cols-[minmax(340px,520px)_1fr]">
       {/* List */}
@@ -273,6 +278,7 @@ function InboxPage() {
       >
         <div className="flex shrink-0 items-center gap-2 px-3 pt-2">
           <SearchField value={search.q ?? ''} onChange={setQuery} />
+          {!selecting && <div className="shrink-0 md:hidden">{priorityFilter}</div>}
         </div>
         {search.group && (
           <div className="flex shrink-0 items-center gap-2 px-3 pt-2">
@@ -327,22 +333,7 @@ function InboxPage() {
                   onChange={(v) => void navigate({ search: (p: InboxSearch) => ({ ...p, all: v === 'all' ? true : undefined }) })}
                 />
               )}
-              <label className="flex items-center gap-1.5 text-[13px] text-muted">
-                <span className="sr-only md:not-sr-only">Priority</span>
-                <select
-                  value={search.prio ?? ''}
-                  onChange={(e) =>
-                    void navigate({
-                      search: (p: InboxSearch) => ({ ...p, prio: e.target.value ? Number(e.target.value) : undefined }),
-                    })
-                  }
-                  className="h-7 rounded-control border border-line-strong bg-bg px-1.5 text-[13px] text-fg"
-                >
-                  <option value="">Any priority</option>
-                  <option value="4">P4 and up</option>
-                  <option value="5">P5 only</option>
-                </select>
-              </label>
+
               <Button
                 size="sm"
                 variant="ghost"
@@ -355,7 +346,7 @@ function InboxPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="ml-auto"
+                  className="ml-auto md:ml-0"
                   onClick={markAllRead}
                   aria-label="Mark all read"
                   title="Mark all read"
@@ -364,6 +355,7 @@ function InboxPage() {
                   <span className="[@media(hover:none)]:hidden">Mark all read</span>
                 </Button>
               )}
+              <div className="ml-auto hidden md:block">{priorityFilter}</div>
             </>
           )}
         </div>
