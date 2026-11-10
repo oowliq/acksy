@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-export type WebhookRequestFormatEnum = 'acksy' | 'discord' | 'slack'
+export type WebhookRequestFormatEnum = 'acksy' | 'discord' | 'slack' | 'telegram'
 
 export type WebhookRequest = {
   /**
@@ -12,7 +12,7 @@ export type WebhookRequest = {
    */
   name?: string
   /**
-   * @description http(s). Private addresses need `webhooks.allow_private` in the server settings.
+   * @description For Telegram, use https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<ID or @channel>. Private addresses need `webhooks.allow_private` in the server settings.
    *
    * Format: `uri`
    * @type string | undefined
@@ -42,7 +42,7 @@ export type WebhookRequest = {
   enabled?: boolean
 }
 
-export type WebhookFormatEnum = 'acksy' | 'discord' | 'slack'
+export type WebhookFormatEnum = 'acksy' | 'discord' | 'slack' | 'telegram'
 
 export type Webhook = {
   id: string

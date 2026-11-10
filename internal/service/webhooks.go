@@ -52,6 +52,9 @@ func (s *Service) applyWebhookInput(ctx context.Context, q store.Querier, p *aut
 		w.URL = *in.URL
 	}
 	if in.Format != nil {
+		if w.Format != *in.Format && (w.Format == domain.WebhookTelegram || *in.Format == domain.WebhookTelegram) && in.URL == nil {
+			return domain.Invalid("supply a new destination when changing the Telegram format")
+		}
 		w.Format = *in.Format
 	}
 	if in.MinPriority != nil {

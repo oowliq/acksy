@@ -16,11 +16,13 @@ import { Checkbox, Dialog, Field, FormError, Input, RadioGroup } from '../form'
 import { Button, Segmented } from '../ui'
 import { CopyBlock } from './copy'
 import { SecretReveal } from './secret-reveal'
+import { TelegramFields } from './telegram-fields'
 
 export const formatOptions: { value: WebhookFormat; label: string }[] = [
   { value: 'acksy', label: 'Acksy' },
   { value: 'discord', label: 'Discord' },
   { value: 'slack', label: 'Slack' },
+  { value: 'telegram', label: 'Telegram' },
 ]
 
 export const verifySnippet = `import hmac, hashlib
@@ -154,24 +156,30 @@ function WebhookForm({
             label="Format"
             value={draft.format}
             options={formatOptions}
-            onChange={(format) => setDraft({ ...draft, format })}
+            onChange={(format) =>
+              setDraft({ ...draft, format, url: (format === 'telegram') !== (draft.format === 'telegram') ? '' : draft.url })
+            }
           />
         </div>
       </div>
-      <Field label="URL" hint={urlHint(draft.format)}>
-        {(f) => (
-          <Input
-            {...f}
-            type="url"
-            inputMode="url"
-            autoCapitalize="none"
-            spellCheck={false}
-            placeholder="https://"
-            value={draft.url}
-            onChange={(e) => setDraft({ ...draft, url: e.target.value })}
-          />
-        )}
-      </Field>
+      {draft.format === 'telegram' ? (
+        <TelegramFields onChange={(url) => setDraft({ ...draft, url })} />
+      ) : (
+        <Field label="URL" hint={urlHint(draft.format)}>
+          {(f) => (
+            <Input
+              {...f}
+              type="url"
+              inputMode="url"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="https://"
+              value={draft.url}
+              onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+            />
+          )}
+        </Field>
+      )}
       <WebhookFilterFields draft={draft} setDraft={setDraft} />
       <FormError error={error} />
       <div className="flex justify-end gap-2">

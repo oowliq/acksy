@@ -1,6 +1,6 @@
 # Исходящие вебхуки
 
-Вебхук пересылает уведомления пользователя на URL: в Home Assistant, n8n, свой сервис, канал Discord или Slack. Он срабатывает на новое уведомление и на повтор по `dedup_key` и учитывает фильтры по топикам и минимальному приоритету. Управлять вебхуками можно только из login-сессии: в веб-интерфейсе (Settings → Webhooks) или через `/api/v1/webhooks` (см. OpenAPI). В интерфейсе есть тестовая отправка, ротация секрета и очередь ожидающих и упавших доставок. Полный URL после сохранения не показывается, видно только origin: в URL может быть токен (у Discord и Slack он там всегда).
+Вебхук пересылает уведомления пользователя на URL: в Home Assistant, n8n, свой сервис, канал Discord, Slack или чат Telegram. Он срабатывает на новое уведомление и на повтор по `dedup_key` и учитывает фильтры по топикам и минимальному приоритету. Управлять вебхуками можно только из login-сессии: в веб-интерфейсе (Settings → Webhooks) или через `/api/v1/webhooks` (см. OpenAPI). В интерфейсе есть тестовая отправка, ротация секрета и очередь ожидающих и упавших доставок. Полный URL после сохранения не показывается, видно только origin: в URL может быть токен (у Discord и Slack он там всегда).
 
 ```bash
 curl -b cookies.txt -H 'Content-Type: application/json' http://localhost:8080/api/v1/webhooks -d '{
@@ -17,6 +17,16 @@ curl -b cookies.txt -H 'Content-Type: application/json' http://localhost:8080/ap
 | `acksy` (по умолчанию) | Свои сервисы, Home Assistant, n8n | JSON ниже |
 | `discord` | Incoming webhook канала Discord | Embed: заголовок, markdown-тело, ссылка, цвет по приоритету. Упоминания отключены (`allowed_mentions.parse = []`), так что `@everyone` в тексте никого не пингует |
 | `slack` | Incoming webhook Slack | Блоки `header`, `section` и `context`, только `plain_text`: mrkdwn Slack отличается от markdown, а `<!channel>` превратился бы в упоминание |
+| `telegram` | Бот Telegram | Текстовое сообщение с заголовком, топиком, приоритетом и текстом уведомления. Длинные сообщения сокращаются до 4096 символов. |
+
+### Подключение Telegram
+
+1. Создайте бота через @BotFather и скопируйте токен.
+2. Для личных уведомлений откройте диалог с ботом и нажмите Start. Для группы добавьте в неё бота, для канала дайте ему право публиковать сообщения.
+3. В Settings → Webhooks → New webhook выберите Telegram. Введите токен и числовой ID чата (для группы он обычно отрицательный) или `@username` публичного канала.
+4. Сохраните вебхук и нажмите Send test. Для смены бота или чата откройте Destination и укажите новую пару значений.
+
+При настройке через API используйте формат `telegram` и URL вида `https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<CHAT_ID>`. Полный URL скрывается после сохранения. Описание метода — в [Telegram Bot API](https://core.telegram.org/bots/api#sendmessage).
 
 Формат `acksy`:
 

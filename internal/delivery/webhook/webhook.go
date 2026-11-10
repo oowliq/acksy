@@ -199,7 +199,7 @@ func (w *Worker) attempt(ctx context.Context, hook *domain.Webhook, event domain
 	if err != nil {
 		return outcome{err: err.Error(), permanent: true}
 	}
-	hr, err := http.NewRequestWithContext(ctx, http.MethodPost, hook.URL, bytes.NewReader(req.Body))
+	hr, err := http.NewRequestWithContext(ctx, http.MethodPost, req.URL, bytes.NewReader(req.Body))
 	if err != nil {
 		return outcome{err: "invalid URL", permanent: true}
 	}
@@ -220,18 +220,35 @@ func (w *Worker) attempt(ctx context.Context, hook *domain.Webhook, event domain
 		return outcome{err: netguard.Describe(err)}
 	}
 	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
-
 	o := outcome{status: resp.StatusCode}
-	switch s := resp.StatusCode; {
+	if hook.Format == domain.WebhookTelegram {
+		var reply struct {
+			OK         bool `json:"ok"`
+			ErrorCode  int  `json:"error_code"`
+			Parameters struct {
+				RetryAfter int `json:"retry_after"`
+			} `json:"parameters"`
+		}
+		err := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&reply)
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 && (err != nil || !reply.OK) {
+			if reply.ErrorCode < 400 || reply.ErrorCode > 599 {
+				return outcome{status: resp.StatusCode, err: "Telegram did not confirm delivery"}
+			}
+			o.status = reply.ErrorCode
+		}
+		o.retryAfter = time.Duration(min(reply.Parameters.RetryAfter, 3600)) * time.Second
+	} else {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64*1024))
+	}
+	switch s := o.status; {
 	case s >= 200 && s < 300:
 		return o
 	case s == http.StatusRequestTimeout || s == http.StatusTooEarly || s == http.StatusTooManyRequests || s >= 500:
-		o.retryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), w.now())
+		o.retryAfter = max(o.retryAfter, parseRetryAfter(resp.Header.Get("Retry-After"), w.now()))
 	default:
 		o.permanent = true // other 4xx: the receiver will not accept it on retry
 	}
-	o.err = "HTTP " + strconv.Itoa(resp.StatusCode)
+	o.err = "HTTP " + strconv.Itoa(o.status)
 	return o
 }
 

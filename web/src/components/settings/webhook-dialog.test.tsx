@@ -63,6 +63,23 @@ describe('WebhookDialog', () => {
     expect(screen.queryByDisplayValue('whsec_x')).toBeNull()
   })
 
+  it('creates a Telegram destination from a masked bot token and chat ID', async () => {
+    const create = vi.spyOn(api, 'createWebhook').mockResolvedValue(created('telegram', 'tg'))
+    const { onCreated } = setup()
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Alerts' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'Telegram' }))
+    const token = screen.getByLabelText('Bot token')
+    expect(token.getAttribute('type')).toBe('password')
+    fireEvent.change(token, { target: { value: '123:fake_key' } })
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: '-100123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create webhook' }))
+    await waitFor(() => expect(onCreated).toHaveBeenCalledWith('tg'))
+    expect(create.mock.calls[0]![0]).toMatchObject({
+      format: 'telegram',
+      url: 'https://api.telegram.org/bot123:fake_key/sendMessage?chat_id=-100123',
+    })
+  })
+
   it('cannot be closed while creating', () => {
     vi.spyOn(api, 'createWebhook').mockReturnValue(new Promise(() => {}))
     const { onOpenChange } = setup()

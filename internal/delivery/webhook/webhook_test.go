@@ -265,3 +265,36 @@ func (e *env) settings(t *testing.T, mutate func(*domain.ServerSettings)) {
 		t.Fatal(err)
 	}
 }
+
+type telegramTransport func(*http.Request) (*http.Response, error)
+
+func (f telegramTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestTelegramDelivery(t *testing.T) {
+	ctx := context.Background()
+	e := newEnv(t)
+	endpoint := "https://api.telegram.org/bot123:test/sendMessage"
+	hook := e.hook(t, endpoint+"?chat_id=-123", domain.WebhookTelegram).Webhook
+	status, response := http.StatusOK, `{"ok":true}`
+	w := New(e.svc, Config{Client: &http.Client{Transport: telegramTransport(func(req *http.Request) (*http.Response, error) {
+		if req.Method != http.MethodPost || req.URL.String() != endpoint {
+			t.Error("unexpected Telegram request target")
+		}
+		defer req.Body.Close()
+		body, err := io.ReadAll(req.Body)
+		if err != nil || !strings.Contains(string(body), `"chat_id":"-123"`) {
+			t.Error("missing chat in request body")
+		}
+		return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(response))}, nil
+	})}}, slog.Default())
+	if result := w.SendTest(ctx, *hook); !result.OK {
+		t.Fatalf("test send: %+v", result)
+	}
+	status, response = http.StatusTooManyRequests, `{"ok":false,"parameters":{"retry_after":120}}`
+	e.publish(t, "backup finished")
+	w.drain(ctx)
+	rows := e.deliveries(t, hook.ID)
+	if len(rows) != 1 || rows[0].NextAttempt == nil || rows[0].NextAttempt.Sub(rows[0].CreatedAt) < 120*time.Second {
+		t.Fatal("Telegram retry interval was not preserved")
+	}
+}

@@ -109,3 +109,37 @@ func TestRenderHeadersAndSignature(t *testing.T) {
 		t.Fatalf("signature vector: %s", got)
 	}
 }
+
+func TestTelegramMessage(t *testing.T) {
+	endpoint := "https://api.telegram.org/bot123:fake_key/sendMessage"
+	for _, chat := range []string{"-100123", "@updates"} {
+		w := &domain.Webhook{URL: endpoint + "?chat_id=" + chat, Format: domain.WebhookTelegram, Name: "updates", MinPriority: 1}
+		if err := domain.ValidateWebhook(w); err != nil {
+			t.Fatal(err)
+		}
+		n := tricky()
+		n.Body = "**offline** " + strings.Repeat("я", 5000)
+		req, err := Render(w, domain.WebhookCreated, "delivery", n, "", fixedNow)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var msg struct {
+			Chat string `json:"chat_id"`
+			Text string `json:"text"`
+		}
+		if err := json.Unmarshal(req.Body, &msg); err != nil {
+			t.Fatal(err)
+		}
+		if req.URL != endpoint || msg.Chat != chat || !strings.Contains(msg.Text, "offline") || strings.Contains(msg.Text, "**") || len([]rune(msg.Text)) != 4096 {
+			t.Fatal("invalid sendMessage request")
+		}
+		if w.URLDisplay() != "https://api.telegram.org/…" {
+			t.Fatal("destination not redacted")
+		}
+	}
+	for _, raw := range []string{endpoint, endpoint + "?chat_id=123&text=x", strings.Replace(endpoint, "api.telegram.org", "elsewhere.example", 1) + "?chat_id=123"} {
+		if _, _, err := domain.TelegramDestination(raw); err == nil {
+			t.Fatal("invalid Telegram destination accepted")
+		}
+	}
+}

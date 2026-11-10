@@ -16,6 +16,7 @@ import (
 
 // Request is a rendered webhook request.
 type Request struct {
+	URL     string
 	Body    []byte
 	Headers map[string]string
 }
@@ -27,7 +28,22 @@ func Render(w *domain.Webhook, event domain.WebhookEvent, deliveryID string, n *
 		body []byte
 		err  error
 	)
+	endpoint := w.URL
 	switch w.Format {
+	case domain.WebhookTelegram:
+		var chat string
+		endpoint, chat, err = domain.TelegramDestination(w.URL)
+		if err != nil {
+			return Request{}, err
+		}
+		text := displayTitle(n) + " · " + footer(n)
+		if plain := markdown.Plain(n.Body); plain != "" {
+			text += "\n\n" + plain
+		}
+		body, err = json.Marshal(map[string]any{
+			"chat_id": chat, "text": markdown.Truncate(text, 4096),
+			"link_preview_options": map[string]bool{"is_disabled": true},
+		})
 	case domain.WebhookDiscord:
 		body, err = json.Marshal(discordBody(n, baseURL))
 	case domain.WebhookSlack:
@@ -39,7 +55,7 @@ func Render(w *domain.Webhook, event domain.WebhookEvent, deliveryID string, n *
 		return Request{}, fmt.Errorf("encode webhook body: %w", err)
 	}
 	ts := strconv.FormatInt(now.Unix(), 10)
-	return Request{Body: body, Headers: map[string]string{
+	return Request{URL: endpoint, Body: body, Headers: map[string]string{
 		"Content-Type":      "application/json",
 		"X-Acksy-Event":     string(event),
 		"X-Acksy-Delivery":  deliveryID,

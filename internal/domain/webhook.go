@@ -2,6 +2,7 @@ package domain
 
 import (
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -16,12 +17,13 @@ const (
 	// WebhookDiscord posts a message to a Discord incoming webhook.
 	WebhookDiscord WebhookFormat = "discord"
 	// WebhookSlack posts a message to a Slack incoming webhook.
-	WebhookSlack WebhookFormat = "slack"
+	WebhookSlack    WebhookFormat = "slack"
+	WebhookTelegram WebhookFormat = "telegram"
 )
 
 // Valid reports whether f is a known format.
 func (f WebhookFormat) Valid() bool {
-	return f == WebhookAcksy || f == WebhookDiscord || f == WebhookSlack
+	return f == WebhookAcksy || f == WebhookDiscord || f == WebhookSlack || f == WebhookTelegram
 }
 
 // Webhook forwards a user's notifications to a URL. Secret signs each
@@ -75,6 +77,17 @@ const (
 	MaxWebhookTopics  = 32
 )
 
+// Telegram webhooks store the destination in the existing write-only URL.
+var telegramDestination = regexp.MustCompile(`^(https://api\.telegram\.org/bot[0-9]+:[A-Za-z0-9_-]+/sendMessage)\?chat_id=(-?[1-9][0-9]*|@[a-zA-Z0-9_]+)$`)
+
+func TelegramDestination(raw string) (endpoint, chatID string, err error) {
+	parts := telegramDestination.FindStringSubmatch(raw)
+	if parts == nil {
+		return "", "", Invalid("expected a Telegram bot sendMessage URL with a chat_id")
+	}
+	return parts[1], parts[2], nil
+}
+
 // ValidateWebhook checks user-supplied fields (topics are checked by the
 // service, which resolves them).
 func ValidateWebhook(w *Webhook) error {
@@ -89,11 +102,15 @@ func ValidateWebhook(w *Webhook) error {
 	case len(w.URL) > MaxURLLen:
 		return Invalid("url is too long")
 	case !w.Format.Valid():
-		return Invalid("format must be acksy, discord or slack")
+		return Invalid("format must be acksy, discord, slack or telegram")
 	case w.MinPriority < PriorityMin || w.MinPriority > PriorityMax:
 		return Invalid("min_priority must be between %d and %d", PriorityMin, PriorityMax)
 	case len(w.TopicIDs) > MaxWebhookTopics:
 		return Invalid("at most %d topics per webhook", MaxWebhookTopics)
+	}
+	if w.Format == WebhookTelegram {
+		_, _, err := TelegramDestination(w.URL)
+		return err
 	}
 	return nil
 }

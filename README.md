@@ -202,7 +202,7 @@ acksy user identities --username admin
 - `GET /notifications`: лента с фильтрами `view` (inbox, archived, snoozed, all), `unread`, `topic`, `min_priority`, `group_key`, поиском `q` (все слова должны встретиться в заголовке, тексте или тегах, регистр не важен, см. [ADR 0005](docs/adr/0005-search.md)) и курсором `before`
 - `PATCH /notifications/{id}`: read, archive, snooze; `POST /notifications/bulk`: то же для выборки (с теми же `q` и `min_priority`); `GET /notifications/counts`: непрочитанные и число отложенных
 - `/topics`, `/topics/{id}/members`, `/topics/{id}/invites`, `/invitations`: топики и шаринг. Владелец приглашает по имени, приглашённый получает уведомление и становится участником, только когда примет приглашение (см. [ADR 0007](docs/adr/0007-topic-invitations.md))
-- `/webhooks`: исходящие вебхуки (форматы `acksy`, `discord`, `slack`, подпись HMAC, ретраи), см. [docs/webhooks.md](docs/webhooks.md)
+- `/webhooks`: исходящие вебхуки (форматы `acksy`, `discord`, `slack`, `telegram`, подпись HMAC, ретраи), см. [docs/webhooks.md](docs/webhooks.md)
 - `/push/config`, `/push/subscriptions`: Web Push-подписки браузеров (только из login-сессии), порог приоритета на устройство, тестовый push
 - `/tokens`: API-токены со scope-ами `notifications:publish`, `notifications:read`, `notifications:write`, `topics:manage`, `admin`, ограничением по топикам и сроком жизни
 - `/users`: администрирование. Admin-токен может только читать пользователей и идентичности. Создавать, менять и удалять пользователей и привязывать идентичности можно только из login-сессии: иначе утёкший токен мог бы задать себе пароль и выпустить новые токены
@@ -280,7 +280,7 @@ Push настраивается в Settings → Push (пункт «Push notifica
 - **Push:** web push на текущем устройстве и список других устройств.
 - **API tokens:** создание токена со scope-ами, ограничением по топикам и сроком действия. Секрет показывается один раз вместе с готовыми примерами `curl` для Acksy, ntfy и gotify. Здесь же токен отзывается.
 - **Topics:** создание топиков, название, описание и приоритет по умолчанию, хранение (`retention_days`, `max_notifications`), участники и приглашения, удаление. Участник расшаренного топика видит его настройки только для чтения и может из него выйти. Входящие приглашения показаны вверху страницы и принимаются или отклоняются там же, их число видно в меню настроек.
-- **Webhooks:** исходящие вебхуки в Home Assistant, n8n, Discord и Slack: фильтры по топикам и приоритету, тестовая отправка, ротация секрета подписи и очередь доставок. Подробности в [docs/webhooks.md](docs/webhooks.md).
+- **Webhooks:** исходящие вебхуки в Home Assistant, n8n, Discord, Slack и Telegram: фильтры по топикам и приоритету, тестовая отправка, ротация секрета подписи и очередь доставок. Подробности в [docs/webhooks.md](docs/webhooks.md).
 - **Users** (только для админа): создание пользователей с паролем или только для SSO, роль, новый пароль, привязка и отвязка OIDC-идентичностей, отключение и удаление. Свою учётную запись админ меняет в Account.
 - **Sign-in** (только для админа): провайдер OIDC, Redirect URL для регистрации, автосоздание и роли из групп, вход по паролю; Test connection проверяет настройки до сохранения.
 

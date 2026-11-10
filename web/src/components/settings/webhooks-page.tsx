@@ -31,7 +31,7 @@ export function WebhooksPage() {
       {webhooks.data?.length === 0 ? (
         <div className="flex flex-col items-start gap-3 rounded-tray border border-line p-6">
           <WebhookIcon className="size-5 text-muted" aria-hidden />
-          <p className="text-[14px] text-fg-2">Forward notifications to Home Assistant, n8n, Discord or Slack.</p>
+          <p className="text-[14px] text-fg-2">Forward notifications to Home Assistant, n8n, Discord, Slack or Telegram.</p>
           <Button onClick={() => setOpen(true)}>Create a webhook</Button>
         </div>
       ) : (

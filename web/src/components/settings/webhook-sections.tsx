@@ -17,6 +17,7 @@ import { Checkbox, ConfirmButton, Dialog, Field, FormError, Input, SettingsSecti
 import { Button, Segmented } from '../ui'
 import { CopyBlock } from './copy'
 import { SecretReveal } from './secret-reveal'
+import { TelegramFields } from './telegram-fields'
 import { formatOptions, verifySnippet, WebhookFilterFields } from './webhook-dialog'
 
 interface SectionProps {
@@ -42,7 +43,9 @@ function useSectionDraft(w: Webhook, section: 'general' | 'filters') {
   }
   const update = useUpdateWebhook()
   const patch = webhookPatch(w, draft, section, topics)
-  const dirty = Object.keys(patch).length > 0
+  const needsUrl = section === 'general' && draft.format !== w.format && (draft.format === 'telegram' || w.format === 'telegram')
+  if (needsUrl) patch.url = draft.url.trim()
+  const dirty = Object.keys(patch).length > 0 && (!needsUrl || /^https?:\/\/\S+$/.test(draft.url.trim()))
   const save = (e: FormEvent) => {
     e.preventDefault()
     if (dirty) update.mutate({ id: w.id, patch })
@@ -78,15 +81,32 @@ export function GeneralSection({ webhook }: SectionProps) {
               label="Format"
               value={draft.format}
               options={formatOptions}
-              onChange={(format) => setDraft({ ...draft, format })}
+              onChange={(format) => {
+                if (format !== draft.format) setDraft({ ...draft, format, url: '' })
+              }}
             />
           </div>
-          {draft.format !== webhook.format && (
-            <p className="text-[12px] text-muted">
-              The receiver must understand the new format; the URL stays the same.
-              {draft.format === 'acksy' && ' Rotate the secret after saving: your service needs it to verify requests.'}
-            </p>
-          )}
+          {draft.format !== webhook.format &&
+            (draft.format === 'telegram' ? (
+              <TelegramFields onChange={(url) => setDraft({ ...draft, url })} />
+            ) : webhook.format === 'telegram' ? (
+              <Field label="New URL">
+                {(f) => (
+                  <Input
+                    {...f}
+                    type="url"
+                    required
+                    value={draft.url}
+                    onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+                  />
+                )}
+              </Field>
+            ) : (
+              <p className="text-[12px] text-muted">
+                The receiver must understand the new format; the URL stays the same.
+                {draft.format === 'acksy' && ' Rotate the secret after saving: your service needs it to verify requests.'}
+              </p>
+            ))}
         </div>
         <Checkbox
           label="Deliver notifications"
@@ -128,21 +148,25 @@ export function DestinationSection({ webhook }: SectionProps) {
       </div>
       {editing && (
         <form onSubmit={submit} className="flex flex-col gap-3">
-          <Field label="New URL">
-            {(f) => (
-              <Input
-                {...f}
-                autoFocus
-                type="url"
-                inputMode="url"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="https://"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            )}
-          </Field>
+          {webhook.format === 'telegram' ? (
+            <TelegramFields onChange={setUrl} />
+          ) : (
+            <Field label="New URL">
+              {(f) => (
+                <Input
+                  {...f}
+                  autoFocus
+                  type="url"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="https://"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              )}
+            </Field>
+          )}
           <FormError error={update.error} />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={cancel}>
