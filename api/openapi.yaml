@@ -545,6 +545,7 @@ paths:
                 name: { $ref: "#/components/schemas/TopicName" }
                 title: { type: string, maxLength: 128 }
                 description: { type: string, maxLength: 1024 }
+                color: { $ref: "#/components/schemas/TopicColor" }
                 default_priority: { $ref: "#/components/schemas/Priority" }
                 retention_days: { $ref: "#/components/schemas/TopicRetentionDays" }
                 max_notifications: { $ref: "#/components/schemas/TopicMaxNotifications" }
@@ -588,6 +589,7 @@ paths:
               properties:
                 title: { type: string, maxLength: 128 }
                 description: { type: string, maxLength: 1024 }
+                color: { $ref: "#/components/schemas/TopicColor" }
                 default_priority:
                   description: null resets to the global default.
                   oneOf:
@@ -1783,6 +1785,7 @@ components:
         name: { $ref: "#/components/schemas/TopicName" }
         title: { type: string }
         description: { type: string }
+        color: { $ref: "#/components/schemas/TopicColor" }
         default_priority: { $ref: "#/components/schemas/Priority" }
         retention_days:
           oneOf: [{ $ref: "#/components/schemas/TopicRetentionDays" }, { type: "null" }]
@@ -1795,6 +1798,11 @@ components:
         member_count: { type: integer }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+
+    TopicColor:
+      type: string
+      pattern: '^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$'
+      description: CSS hex color shared by all members. Omit on creation to choose a random palette color.
 
     TopicRetentionDays:
       type: integer
@@ -1945,6 +1953,7 @@ components:
               properties:
                 id: { type: string }
                 name: { type: string }
+                color: { $ref: "#/components/schemas/TopicColor" }
             - type: "null"
         title: { type: string }
         body: { type: string }

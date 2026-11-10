@@ -117,7 +117,7 @@ export const NotificationRow = memo(function NotificationRow({
                 role="img"
                 aria-label={`Topic ${n.topic.name}`}
                 className="hidden size-2 shrink-0 rounded-[2px] [@media(hover:none)]:inline-block"
-                style={{ background: topicSwatch(n.topic.id) }}
+                style={{ background: topicSwatch(n.topic.id, n.topic.color) }}
               />
             )}
             {preview && <span className="truncate">{preview}</span>}
@@ -134,7 +134,11 @@ export const NotificationRow = memo(function NotificationRow({
         </time>
         {n.topic && !inTray && (
           <span className="flex max-w-28 items-center gap-1.5 truncate group-focus-within:invisible group-hover:invisible [@media(hover:none)]:hidden">
-            <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: topicSwatch(n.topic.id) }} />
+            <span
+              aria-hidden
+              className="size-2 shrink-0 rounded-[2px]"
+              style={{ background: topicSwatch(n.topic.id, n.topic.color) }}
+            />
             <span className="truncate">{n.topic.name}</span>
           </span>
         )}

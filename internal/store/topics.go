@@ -94,6 +94,7 @@ func (q queries) TouchToken(ctx context.Context, id string, at time.Time) error 
 // Topics.
 
 type topicRow struct {
+	Color           string  `db:"color"`
 	ID              string  `db:"id"`
 	OwnerID         string  `db:"owner_id"`
 	OwnerUsername   string  `db:"owner_username"`
@@ -112,7 +113,7 @@ type topicRow struct {
 func (r topicRow) toDomain() domain.Topic {
 	return domain.Topic{
 		ID: r.ID, OwnerID: r.OwnerID, OwnerUsername: r.OwnerUsername, Name: r.Name,
-		Title: r.Title, Description: r.Description, DefaultPriority: r.DefaultPriority,
+		Color: r.Color, Title: r.Title, Description: r.Description, DefaultPriority: r.DefaultPriority,
 		RetentionDays: r.RetentionDays, MaxNotifications: r.MaxCount,
 		Role: domain.MemberRole(deref(r.Role)), MemberCount: r.MemberCount,
 		CreatedAt: fromMs(r.CreatedAt), UpdatedAt: fromMs(r.UpdatedAt),
@@ -121,7 +122,7 @@ func (r topicRow) toDomain() domain.Topic {
 
 // topicSelect selects topics with owner username and member count. The
 // caller's role is NULL unless the query joins a membership as "m".
-const topicSelect = `SELECT t.id, t.owner_id, u.username AS owner_username, t.name, t.title, t.description,
+const topicSelect = `SELECT t.id, t.owner_id, u.username AS owner_username, t.name, t.color, t.title, t.description,
 	t.default_priority, t.retention_days, t.max_notifications, t.created_at, t.updated_at,
 	(SELECT COUNT(*) FROM topic_members c WHERE c.topic_id = t.id) AS member_count`
 
@@ -134,9 +135,9 @@ func topicsToDomain(rows []topicRow) []domain.Topic {
 }
 
 func (q queries) CreateTopic(ctx context.Context, t *domain.Topic) error {
-	_, err := q.exec(ctx, `INSERT INTO topics (id, owner_id, name, title, description, default_priority,
-		retention_days, max_notifications, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.OwnerID, t.Name, t.Title, t.Description, t.DefaultPriority, t.RetentionDays, t.MaxNotifications,
+	_, err := q.exec(ctx, `INSERT INTO topics (id, owner_id, name, color, title, description, default_priority,
+		retention_days, max_notifications, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.OwnerID, t.Name, t.Color, t.Title, t.Description, t.DefaultPriority, t.RetentionDays, t.MaxNotifications,
 		ms(t.CreatedAt), ms(t.UpdatedAt))
 	if isUniqueViolation(err) {
 		return domain.Conflict("topic %q already exists", t.Name)
@@ -184,9 +185,9 @@ func (q queries) ListTopicsForUser(ctx context.Context, userID string) ([]domain
 }
 
 func (q queries) UpdateTopic(ctx context.Context, t *domain.Topic) error {
-	return q.execOne(ctx, "topic", `UPDATE topics SET title = ?, description = ?, default_priority = ?,
+	return q.execOne(ctx, "topic", `UPDATE topics SET color = ?, title = ?, description = ?, default_priority = ?,
 		retention_days = ?, max_notifications = ?, updated_at = ? WHERE id = ?`,
-		t.Title, t.Description, t.DefaultPriority, t.RetentionDays, t.MaxNotifications, ms(t.UpdatedAt), t.ID)
+		t.Color, t.Title, t.Description, t.DefaultPriority, t.RetentionDays, t.MaxNotifications, ms(t.UpdatedAt), t.ID)
 }
 
 func (q queries) DeleteTopic(ctx context.Context, id string) error {

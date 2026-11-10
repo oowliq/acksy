@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -193,7 +194,7 @@ func TestPublishAutoCreatesOwnTopic(t *testing.T) {
 
 	must(e.svc.Publish(ctx, alice, domain.Message{Topic: "cron", Body: "x"}))
 	topics := must(e.svc.ListTopics(ctx, alice))
-	if len(topics) != 1 || topics[0].Name != "cron" {
+	if len(topics) != 1 || topics[0].Name != "cron" || !slices.Contains(topicPalette[:], topics[0].Color) {
 		t.Fatalf("auto-create: %+v", topics)
 	}
 }
@@ -498,4 +499,27 @@ func (e *env) putSettings(s domain.ServerSettings) {
 		e.t.Fatal(err)
 	}
 	e.svc.server.Store(nil) // re-read on next use
+}
+
+func TestSharedTopicColor(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	alice := e.user("alice", domain.RoleUser)
+	bob := e.user("bob", domain.RoleUser)
+	topic := must(e.svc.CreateTopic(ctx, alice, CreateTopicInput{Name: "ci", Color: ptr("#ABC")}))
+	if topic.Color != "#abc" {
+		t.Fatalf("created color = %q", topic.Color)
+	}
+	e.share(alice, topic.ID, "bob")
+	must(e.svc.Publish(ctx, alice, domain.Message{Topic: "ci", Body: "build"}))
+	_, err := e.svc.UpdateTopic(ctx, bob, topic.ID, UpdateTopicInput{Color: ptr("#fff")})
+	wantKind(t, err, domain.ErrForbidden)
+	_, err = e.svc.UpdateTopic(ctx, alice, topic.ID, UpdateTopicInput{Color: ptr("red")})
+	wantKind(t, err, domain.ErrInvalid)
+	must(e.svc.UpdateTopic(ctx, alice, topic.ID, UpdateTopicInput{Color: ptr("#1234abcd")}))
+	must(e.svc.UpdateTopic(ctx, alice, topic.ID, UpdateTopicInput{Title: ptr("Builds")}))
+	got := must(e.svc.ListNotifications(ctx, bob, ListQuery{})).Items[0]
+	if got.Topic.Color != "#1234abcd" {
+		t.Fatalf("member notification color = %q", got.Topic.Color)
+	}
 }

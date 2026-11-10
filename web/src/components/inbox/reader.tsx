@@ -78,7 +78,11 @@ export function Reader({
         <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted [&>*]:whitespace-nowrap">
           {n.topic && (
             <span className="flex items-center gap-1.5 text-fg-2">
-              <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: topicSwatch(n.topic.id) }} />
+              <span
+                aria-hidden
+                className="size-2.5 rounded-[3px]"
+                style={{ background: topicSwatch(n.topic.id, n.topic.color) }}
+              />
               {n.topic.name}
             </span>
           )}

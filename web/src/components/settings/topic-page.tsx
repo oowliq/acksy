@@ -39,7 +39,7 @@ export function TopicPage({ id }: { id: string }) {
     <>
       {back}
       <div className="mb-6 flex items-center gap-3">
-        <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id) }} />
+        <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id, t.color) }} />
         <div className="min-w-0">
           <h1 className="truncate text-[22px] font-semibold">{t.title || t.name}</h1>
           <code className="font-mono text-[12px] text-muted">{topicRef(t)}</code>

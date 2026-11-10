@@ -218,7 +218,7 @@ function InboxNav({ onNavigate }: { onNavigate?: () => void }) {
               count={counts?.by_topic[t.id]}
               onSelect={onNavigate}
             >
-              <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id) }} />
+              <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id, t.color) }} />
               <span className="truncate">{t.title || t.name}</span>
               {t.role === 'member' && <span className="sr-only">shared by {t.owner_username}</span>}
             </NavItem>

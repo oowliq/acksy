@@ -15,6 +15,7 @@ import {
 import { draftError, type TopicDraft, topicDraft, topicPatch } from '@/lib/topics'
 import { ConfirmButton, errorMessage, Field, FormError, Input, RadioGroup, SettingsSection, Textarea } from '../form'
 import { Button, Segmented } from '../ui'
+import { TopicColorField } from './topic-color-field'
 
 interface SectionProps {
   topic: Topic
@@ -24,7 +25,7 @@ interface SectionProps {
 function sectionSource(t: Topic, section: 'general' | 'retention'): string {
   return JSON.stringify(
     section === 'general'
-      ? [t.title, t.description, t.default_priority ?? null]
+      ? [t.color, t.title, t.description, t.default_priority ?? null]
       : [t.retention_days ?? null, t.max_notifications ?? null],
   )
 }
@@ -83,6 +84,13 @@ export function GeneralSection({ topic, editable }: SectionProps) {
             />
           )}
         </Field>
+        <TopicColorField
+          hint="Hex color shown to every member."
+          disabled={!editable}
+          required={!!topic.color}
+          value={draft.color}
+          onChange={(color) => setDraft({ ...draft, color })}
+        />
         <Field label="Description">
           {(f) => (
             <Textarea

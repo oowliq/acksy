@@ -31,8 +31,9 @@ const (
 
 // TopicSummary is the topic embedded in a notification.
 type TopicSummary struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	Color string `json:"color,omitempty"`
+	ID    string `json:"id"`
+	Name  string `json:"name"`
 }
 
 // Action is a button attached to a notification: "view" opens URL in the

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"math/rand/v2"
+	"regexp"
 	"strings"
 
 	"github.com/oowliq/acksy/internal/auth"
@@ -72,6 +74,7 @@ func notMember(err error) error {
 
 // CreateTopicInput describes a new topic.
 type CreateTopicInput struct {
+	Color           *string
 	Name            string
 	Title           string
 	Description     string
@@ -104,7 +107,10 @@ func (s *Service) createTopic(ctx context.Context, q store.Querier, p *auth.Prin
 		return nil, err
 	}
 	t := &domain.Topic{ID: s.newID(), OwnerID: p.User.ID, Name: name}
-	if err := applyTopicFields(t, &in.Title, &in.Description, in.DefaultPriority, in.DefaultPriority != nil); err != nil {
+	if in.Color == nil {
+		t.Color = topicPalette[rand.IntN(len(topicPalette))] //nolint:gosec // Decorative color selection.
+	}
+	if err := applyTopicFields(t, in.Color, &in.Title, &in.Description, in.DefaultPriority, in.DefaultPriority != nil); err != nil {
 		return nil, err
 	}
 	t.RetentionDays, t.MaxNotifications = in.RetentionDays, in.MaxNotifications
@@ -123,7 +129,17 @@ func (s *Service) createTopic(ctx context.Context, q store.Querier, p *auth.Prin
 	return created, em.emit(ctx, p.User.ID, domain.EventTopicChanged, created)
 }
 
-func applyTopicFields(t *domain.Topic, title, description *string, prio *int, setPrio bool) error {
+var topicPalette = [...]string{"#cba6f7", "#89dceb", "#94e2d5", "#f9e2af", "#74c7ec", "#89b4fa"}
+
+var topicHex = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
+
+func applyTopicFields(t *domain.Topic, color, title, description *string, prio *int, setPrio bool) error {
+	if color != nil {
+		if !topicHex.MatchString(*color) {
+			return domain.Invalid("color must be a hex color such as #89b4fa")
+		}
+		t.Color = strings.ToLower(*color)
+	}
 	if title != nil {
 		t.Title = strings.TrimSpace(*title)
 	}
@@ -201,6 +217,7 @@ func (s *Service) GetTopic(ctx context.Context, p *auth.Principal, id string) (*
 
 // UpdateTopicInput is a partial topic update.
 type UpdateTopicInput struct {
+	Color              *string
 	Title              *string
 	Description        *string
 	DefaultPriority    *int
@@ -221,7 +238,7 @@ func (s *Service) UpdateTopic(ctx context.Context, p *auth.Principal, id string,
 		if err != nil {
 			return err
 		}
-		if err := applyTopicFields(t, in.Title, in.Description, in.DefaultPriority, in.SetDefaultPriority); err != nil {
+		if err := applyTopicFields(t, in.Color, in.Title, in.Description, in.DefaultPriority, in.SetDefaultPriority); err != nil {
 			return err
 		}
 		if in.SetRetentionDays {

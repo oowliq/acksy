@@ -17,6 +17,7 @@ const (
 // Topic is an optional category for notifications, owned by a user and
 // optionally shared with other users (members).
 type Topic struct {
+	Color           string `json:"color,omitempty"`
 	ID              string `json:"id"`
 	OwnerID         string `json:"owner_id"`
 	OwnerUsername   string `json:"owner_username"`

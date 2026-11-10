@@ -86,7 +86,7 @@ func (s *Service) Publish(ctx context.Context, p *auth.Principal, m domain.Messa
 				CreatedAt: now, UpdatedAt: now, ExpiresAt: m.ExpiresAt,
 			}
 			if topic != nil {
-				n.Topic = &domain.TopicSummary{ID: topic.ID, Name: topic.Name}
+				n.Topic = &domain.TopicSummary{ID: topic.ID, Name: topic.Name, Color: topic.Color}
 			}
 			stored, deduped, err := s.storeNotification(ctx, q, em, wq, n)
 			if err != nil {

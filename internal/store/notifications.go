@@ -14,6 +14,7 @@ type notificationRow struct {
 	ID           string  `db:"id"`
 	UserID       string  `db:"user_id"`
 	TopicID      *string `db:"topic_id"`
+	TopicColor   *string `db:"topic_color"`
 	TopicName    *string `db:"topic_name"`
 	MessageID    string  `db:"message_id"`
 	Title        string  `db:"title"`
@@ -35,7 +36,7 @@ type notificationRow struct {
 	SnoozedUntil *int64  `db:"snoozed_until"`
 }
 
-const notificationSelect = `SELECT n.id, n.user_id, n.topic_id, t.name AS topic_name, n.message_id, n.title, n.body,
+const notificationSelect = `SELECT n.id, n.user_id, n.topic_id, t.color AS topic_color, t.name AS topic_name, n.message_id, n.title, n.body,
 	n.priority, n.tags, n.click_url, n.actions, n.group_key, n.dedup_key, n.repeat_count, n.source, n.token_id,
 	n.created_at, n.updated_at, n.expires_at, n.read_at, n.archived_at, n.snoozed_until
 	FROM notifications n LEFT JOIN topics t ON t.id = n.topic_id`
@@ -49,7 +50,7 @@ func (r notificationRow) toDomain() (domain.Notification, error) {
 		ReadAt: fromMsPtr(r.ReadAt), ArchivedAt: fromMsPtr(r.ArchivedAt), SnoozedUntil: fromMsPtr(r.SnoozedUntil),
 	}
 	if r.TopicID != nil {
-		n.Topic = &domain.TopicSummary{ID: *r.TopicID, Name: deref(r.TopicName)}
+		n.Topic = &domain.TopicSummary{ID: *r.TopicID, Name: deref(r.TopicName), Color: deref(r.TopicColor)}
 	}
 	if err := json.Unmarshal([]byte(r.Tags), &n.Tags); err != nil {
 		return n, fmt.Errorf("decode tags of %s: %w", r.ID, err)

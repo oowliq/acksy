@@ -40,6 +40,9 @@ describe('parseInboxSearch', () => {
 })
 
 describe('topicSwatch', () => {
+  it('uses a saved hex color when present', () => {
+    expect(topicSwatch('abc', '#123abc')).toBe('#123abc')
+  })
   it('is stable and never uses reserved inks', () => {
     expect(topicSwatch('abc')).toBe(topicSwatch('abc'))
     for (const id of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']) {

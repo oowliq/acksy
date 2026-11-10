@@ -2,6 +2,7 @@ import type { Topic, UpdateTopicRequest } from './api'
 
 /** Editable topic fields as the form holds them: numbers stay strings, '' means unset. */
 export interface TopicDraft {
+  color: string
   title: string
   description: string
   defaultPriority: number | null
@@ -11,6 +12,7 @@ export interface TopicDraft {
 
 export function topicDraft(t: Topic): TopicDraft {
   return {
+    color: t.color ?? '',
     title: t.title,
     description: t.description,
     defaultPriority: t.default_priority ?? null,
@@ -25,6 +27,7 @@ const num = (s: string): number | null => (s.trim() === '' ? null : Number(s))
 export function topicPatch(t: Topic, d: TopicDraft, section: 'general' | 'retention'): UpdateTopicRequest {
   const patch: UpdateTopicRequest = {}
   if (section === 'general') {
+    if (d.color !== (t.color ?? '')) patch.color = d.color
     if (d.title.trim() !== t.title) patch.title = d.title.trim()
     if (d.description.trim() !== t.description) patch.description = d.description.trim()
     if (d.defaultPriority !== (t.default_priority ?? null)) patch.default_priority = d.defaultPriority

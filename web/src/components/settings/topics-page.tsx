@@ -7,6 +7,7 @@ import { topicRef, topicSwatch } from '@/lib/inbox'
 import { invitationsQuery, topicsQuery, useAcceptInvitation, useCreateTopic, useDeclineInvitation } from '@/lib/queries'
 import { Dialog, Field, FormError, Input, SettingsSection } from '../form'
 import { Button } from '../ui'
+import { TopicColorField } from './topic-color-field'
 
 export const TOPIC_NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
@@ -115,7 +116,7 @@ function TopicRow({ topic: t }: { topic: Topic }) {
         params={{ id: t.id }}
         className="-mx-2.5 flex min-h-14 items-center gap-3 rounded-control px-2.5 py-3 transition-colors duration-150 hover:bg-hover"
       >
-        <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id) }} />
+        <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: topicSwatch(t.id, t.color) }} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="flex flex-wrap items-center gap-2">
             <span className="truncate font-medium text-fg">{t.title || t.name}</span>
@@ -139,6 +140,7 @@ function TopicRow({ topic: t }: { topic: Topic }) {
 
 function NewTopicDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [name, setName] = useState('')
+  const [color, setColor] = useState('')
   const [title, setTitle] = useState('')
   const create = useCreateTopic()
   const navigate = useNavigate()
@@ -148,6 +150,7 @@ function NewTopicDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
     if (!o) {
       setName('')
       setTitle('')
+      setColor('')
       create.reset()
     }
     onOpenChange(o)
@@ -157,7 +160,7 @@ function NewTopicDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
     e.preventDefault()
     if (!valid) return
     create.mutate(
-      { name, ...(title.trim() ? { title: title.trim() } : {}) },
+      { name, ...(color ? { color } : {}), ...(title.trim() ? { title: title.trim() } : {}) },
       {
         onSuccess: (t) => {
           reset(false)
@@ -200,6 +203,7 @@ function NewTopicDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
         <Field label="Title" hint="Optional display name.">
           {(f) => <Input {...f} maxLength={128} value={title} onChange={(e) => setTitle(e.target.value)} />}
         </Field>
+        <TopicColorField hint="Leave blank for a random palette color." value={color} onChange={setColor} />
         <FormError error={error} />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => reset(false)}>

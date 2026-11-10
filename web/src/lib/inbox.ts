@@ -113,7 +113,8 @@ const SWATCHES = ['mauve', 'sky', 'teal', 'yellow', 'sapphire', 'blue'] as const
  * peach (priority), green (success), pink (inline code) and the reddish
  * flamingo/rosewater: one ink, one meaning.
  */
-export function topicSwatch(id: string): string {
+export function topicSwatch(id: string, color?: string): string {
+  if (color) return color
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
   return `var(--ctp-${SWATCHES[Math.abs(h) % SWATCHES.length]})`

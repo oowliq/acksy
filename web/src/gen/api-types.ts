@@ -505,6 +505,13 @@ export type Me = {
 }
 
 /**
+ * @description CSS hex color shared by all members. Omit on creation to choose a random palette color.
+ * @pattern ^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$
+ * @type string
+ */
+export type TopicColor = string
+
+/**
  * @description Read (and archived) notifications of this topic are deleted this many
  * days after their last change, instead of the instance's
  * read retention (server settings, per priority). Applies to every member's copy.
@@ -538,6 +545,12 @@ export type Topic = {
   name: TopicName
   title: string
   description: string
+  /**
+   * @description CSS hex color shared by all members. Omit on creation to choose a random palette color.
+   * @pattern ^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$
+   * @type string | undefined
+   */
+  color?: TopicColor
   /**
    * @description 1 = min, 3 = default, 5 = urgent.
    * @minimum 1
@@ -793,6 +806,12 @@ export type Notification = {
   topic: {
     id: string
     name: string
+    /**
+     * @description CSS hex color shared by all members. Omit on creation to choose a random palette color.
+     * @pattern ^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$
+     * @type string | undefined
+     */
+    color?: TopicColor
   } | null
   title: string
   body: string
@@ -1692,6 +1711,12 @@ export type CreateTopicBody = {
    */
   description?: string
   /**
+   * @description CSS hex color shared by all members. Omit on creation to choose a random palette color.
+   * @pattern ^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$
+   * @type string | undefined
+   */
+  color?: TopicColor
+  /**
    * @description 1 = min, 3 = default, 5 = urgent.
    * @minimum 1
    * @maximum 5
@@ -1792,6 +1817,12 @@ export type UpdateTopicBody = {
    * @type string | undefined
    */
   description?: string
+  /**
+   * @description CSS hex color shared by all members. Omit on creation to choose a random palette color.
+   * @pattern ^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$
+   * @type string | undefined
+   */
+  color?: TopicColor
   /**
    * @description null resets to the global default.
    */

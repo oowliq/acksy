@@ -194,19 +194,21 @@ func (a *api) listTopics(w http.ResponseWriter, r *http.Request) {
 
 func (a *api) createTopic(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name            string `json:"name"`
-		Title           string `json:"title"`
-		Description     string `json:"description"`
-		DefaultPriority *int   `json:"default_priority"`
-		RetentionDays   *int   `json:"retention_days"`
-		MaxCount        *int   `json:"max_notifications"`
+		Color           *string `json:"color"`
+		Name            string  `json:"name"`
+		Title           string  `json:"title"`
+		Description     string  `json:"description"`
+		DefaultPriority *int    `json:"default_priority"`
+		RetentionDays   *int    `json:"retention_days"`
+		MaxCount        *int    `json:"max_notifications"`
 	}
 	if err := decodeJSON(w, r, &in); err != nil {
 		respondErr(w, r, a.log, err)
 		return
 	}
 	t, err := a.svc.CreateTopic(r.Context(), principal(r), service.CreateTopicInput{
-		Name: in.Name, Title: in.Title, Description: in.Description, DefaultPriority: in.DefaultPriority,
+		Color: in.Color,
+		Name:  in.Name, Title: in.Title, Description: in.Description, DefaultPriority: in.DefaultPriority,
 		RetentionDays: in.RetentionDays, MaxNotifications: in.MaxCount,
 	})
 	if err != nil {
@@ -227,6 +229,7 @@ func (a *api) getTopic(w http.ResponseWriter, r *http.Request) {
 
 func (a *api) updateTopic(w http.ResponseWriter, r *http.Request) {
 	var in struct {
+		Color           *string  `json:"color"`
 		Title           *string  `json:"title"`
 		Description     *string  `json:"description"`
 		DefaultPriority opt[int] `json:"default_priority"`
@@ -238,6 +241,7 @@ func (a *api) updateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t, err := a.svc.UpdateTopic(r.Context(), principal(r), chi.URLParam(r, "id"), service.UpdateTopicInput{
+		Color: in.Color,
 		Title: in.Title, Description: in.Description,
 		DefaultPriority: in.DefaultPriority.Value, SetDefaultPriority: in.DefaultPriority.Set,
 		RetentionDays: in.RetentionDays.Value, SetRetentionDays: in.RetentionDays.Set,
